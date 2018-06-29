@@ -8,10 +8,13 @@ import java.util.Arrays;
  */
 public abstract class MyAbstractStringBuilder implements Appendable, CharSequence {
     /**
+     * 可开辟的最大空间.(虚拟机限制)
+     */
+    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+    /**
      * 用于存储字符串
      */
     char[] value;
-
     /**
      * 数组value中有多少是使用中的
      */
@@ -59,11 +62,6 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
                     newCapacity(minimumCapacity));
         }
     }
-
-    /**
-     * 可开辟的最大空间.(虚拟机限制)
-     */
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     /**
      * minCapacity合法时, 按(value.length << 1) + 2 扩展

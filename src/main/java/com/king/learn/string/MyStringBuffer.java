@@ -110,8 +110,7 @@ public final class MyStringBuffer extends MyAbstractStringBuilder {
     }
 
     @Override
-    public synchronized MyStringBuffer append(CharSequence s, int start, int end)
-    {
+    public synchronized MyStringBuffer append(CharSequence s, int start, int end) {
         toStringCache = null;
         super.append(s, start, end);
         return this;
