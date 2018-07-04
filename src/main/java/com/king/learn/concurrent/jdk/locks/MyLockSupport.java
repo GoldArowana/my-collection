@@ -45,7 +45,7 @@ import java.lang.reflect.Field;
  *
  * <p>This class associates, with each thread that uses it, a permit
  * (in the sense of the {@link java.util.concurrent.Semaphore
- * Semaphore} class). A call to {@code park} will return immediately
+ * MySemaphore} class). A call to {@code park} will return immediately
  * if the permit is available, consuming it in the process; otherwise
  * it <em>may</em> block.  A call to {@code unpark} makes the permit
  * available, if it was not already available. (Unlike with Semaphores

@@ -44,7 +44,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * permits.  Each {@link #acquire} blocks if necessary until a permit is
  * available, and then takes it.  Each {@link #release} adds a permit,
  * potentially releasing a blocking acquirer.
- * However, no actual permit objects are used; the {@code Semaphore} just
+ * However, no actual permit objects are used; the {@code MySemaphore} just
  * keeps a count of the number available and acts accordingly.
  *
  * <p>Semaphores are often used to restrict the number of threads than can
@@ -53,7 +53,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * <pre> {@code
  * class Pool {
  *   private static final int MAX_AVAILABLE = 100;
- *   private final Semaphore available = new Semaphore(MAX_AVAILABLE, true);
+ *   private final MySemaphore available = new MySemaphore(MAX_AVAILABLE, true);
  *
  *   public Object getItem() throws InterruptedException {
  *     available.acquire();
@@ -155,26 +155,26 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * @author Doug Lea
  * @since 1.5
  */
-public class Semaphore {
+public class MySemaphore {
     /**
      * All mechanics via AbstractQueuedSynchronizer subclass
      */
     private final Sync sync;
 
     /**
-     * Creates a {@code Semaphore} with the given number of
+     * Creates a {@code MySemaphore} with the given number of
      * permits and nonfair fairness setting.
      *
      * @param permits the initial number of permits available.
      *                This value may be negative, in which case releases
      *                must occur before any acquires will be granted.
      */
-    public Semaphore(int permits) {
+    public MySemaphore(int permits) {
         sync = new NonfairSync(permits);
     }
 
     /**
-     * Creates a {@code Semaphore} with the given number of
+     * Creates a {@code MySemaphore} with the given number of
      * permits and the given fairness setting.
      *
      * @param permits the initial number of permits available.
@@ -184,7 +184,7 @@ public class Semaphore {
      *                first-in first-out granting of permits under contention,
      *                else {@code false}
      */
-    public Semaphore(int permits, boolean fair) {
+    public MySemaphore(int permits, boolean fair) {
         sync = fair ? new FairSync(permits) : new NonfairSync(permits);
     }
 
@@ -505,7 +505,7 @@ public class Semaphore {
      * are assigned in turn to other threads trying to acquire permits.
      *
      * <p>There is no requirement that a thread that releases a permit must
-     * have acquired that permit by calling {@link Semaphore#acquire acquire}.
+     * have acquired that permit by calling {@link MySemaphore#acquire acquire}.
      * Correct usage of a semaphore is established by programming convention
      * in the application.
      *
