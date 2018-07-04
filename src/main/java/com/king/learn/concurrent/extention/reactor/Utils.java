@@ -1,7 +1,7 @@
-package com.king.learn.concurrent.reactor;
+package com.king.learn.concurrent.extention.reactor;
 
 public class Utils {
-    public static void sleep(long time){
+    public static void sleep(long time) {
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {

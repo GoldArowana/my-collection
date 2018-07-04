@@ -1,4 +1,4 @@
-package com.king.learn.concurrent.reactor;
+package com.king.learn.concurrent.extention.reactor;
 
 public class Dispatcher {
     private final Demultiplexer demultiplexer;
@@ -15,7 +15,7 @@ public class Dispatcher {
         return new RequestHandler(this, requestID, resourceID);
     }
 
-    public synchronized void freeResource(){
+    public synchronized void freeResource() {
         demultiplexer.returnResource(resourceID);
     }
 

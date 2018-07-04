@@ -1,8 +1,8 @@
-package com.king.learn.concurrent.reactor;
+package com.king.learn.concurrent.extention.reactor;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
 
-import static java.lang.Thread.*;
+import static java.lang.Thread.sleep;
 
 // 多路选择器
 public class Demultiplexer {

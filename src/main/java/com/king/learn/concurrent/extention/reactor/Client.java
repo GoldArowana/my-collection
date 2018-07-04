@@ -1,7 +1,7 @@
-package com.king.learn.concurrent.reactor;
+package com.king.learn.concurrent.extention.reactor;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.Socket;
 
 public class Client extends Thread {
     private static final int PORT = 4000;
@@ -10,6 +10,13 @@ public class Client extends Thread {
 
     public Client(int requestID) {
         this.requestID = requestID;
+    }
+
+    public static void main(String[] args) {
+        int i = 0;
+        while (i < 10) {
+            new Client(i++).start();
+        }
     }
 
     @Override
@@ -25,12 +32,5 @@ public class Client extends Thread {
             e.printStackTrace();
         }
         System.out.println("No." + requestID + " request was sent ...");
-    }
-
-    public static void main(String[] args) {
-        int i = 0;
-        while (i < 10) {
-            new Client(i++).start();
-        }
     }
 }

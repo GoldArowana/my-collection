@@ -1,4 +1,4 @@
-package com.king.learn.concurrent.reactor;
+package com.king.learn.concurrent.extention.reactor;
 
 public class RequestHandler extends Thread {
     private final Dispatcher dispatcher;
@@ -16,7 +16,7 @@ public class RequestHandler extends Thread {
         try {
             Utils.sleep(1000);
             System.out.println("Request No. " + requestID + " has been resolved by resource " + resourceID);
-        }finally {
+        } finally {
             dispatcher.freeResource();
         }
     }

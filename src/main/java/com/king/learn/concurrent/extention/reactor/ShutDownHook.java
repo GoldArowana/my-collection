@@ -1,9 +1,9 @@
-package com.king.learn.concurrent.reactor;
+package com.king.learn.concurrent.extention.reactor;
 
-import java.io.*;
-import java.net.*;
+import java.io.IOException;
+import java.net.ServerSocket;
 
-public class ShutDownHook extends Thread{
+public class ShutDownHook extends Thread {
     private ServerSocket serverSocket;
 
     public ShutDownHook(ServerSocket serverSocket) {
@@ -11,12 +11,12 @@ public class ShutDownHook extends Thread{
     }
 
     @Override
-    public void run(){
+    public void run() {
         try {
             serverSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
-        }finally {
+        } finally {
             serverSocket = null;
             System.out.println("Server has been closed!");
         }

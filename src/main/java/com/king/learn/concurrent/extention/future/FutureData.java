@@ -1,4 +1,4 @@
-package com.king.learn.concurrent.future.my_future;
+package com.king.learn.concurrent.extention.future;
 
 public class FutureData implements Data {
     // 真实数据RealData的引用.
