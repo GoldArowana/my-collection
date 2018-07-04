@@ -155,8 +155,7 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  * @author Doug Lea
  * @since 1.5
  */
-public class Semaphore implements java.io.Serializable {
-    private static final long serialVersionUID = -3222578661600680210L;
+public class Semaphore {
     /**
      * All mechanics via AbstractQueuedSynchronizer subclass
      */

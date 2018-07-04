@@ -137,7 +137,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      *     including cleaning out cancelled nodes/threads
      *     from lists to avoid garbage retention and memory depletion.
      *
-     * Blocking is mainly accomplished using LockSupport park/unpark,
+     * Blocking is mainly accomplished using MyLockSupport park/unpark,
      * except that nodes that appear to be the next ones to become
      * fulfilled first spin a bit (on multiprocessors only). On very
      * busy synchronous queues, spinning can dramatically improve

@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
 
 public abstract class MyAbstractQueuedSynchronizer {
 
@@ -278,7 +279,7 @@ public abstract class MyAbstractQueuedSynchronizer {
         }
         // 唤醒后继节点
         if (s != null)
-            LockSupport.unpark(s.thread);
+            MyLockSupport.unpark(s.thread);
     }
 
     /**
@@ -336,7 +337,7 @@ public abstract class MyAbstractQueuedSynchronizer {
      * @return {@code true} if interrupted
      */
     private final boolean parkAndCheckInterrupt() {
-        LockSupport.park(this);
+        MyLockSupport.park(this);
         return Thread.interrupted();
     }
 
@@ -432,7 +433,7 @@ public abstract class MyAbstractQueuedSynchronizer {
                     return false;
                 if (shouldParkAfterFailedAcquire(p, node) &&
                         nanosTimeout > spinForTimeoutThreshold)
-                    LockSupport.parkNanos(this, nanosTimeout);
+                    MyLockSupport.parkNanos(this, nanosTimeout);
                 if (Thread.interrupted())
                     throw new InterruptedException();
             }
@@ -462,6 +463,7 @@ public abstract class MyAbstractQueuedSynchronizer {
          *     2.这个锁本来就被当前线程持有, 也就是重入
          */
         if (!tryAcquire(arg) &&
+                // 如果 tryAcquire 失败，那么进入到阻塞队列等待
                 acquireQueued(addWaiter(Node.EXCLUSIVE), arg))
             selfInterrupt();
     }
@@ -496,8 +498,10 @@ public abstract class MyAbstractQueuedSynchronizer {
      * 如果计数器为0, 那么就彻底释放
      */
     public final boolean release(int arg) {
+        // 1. 释放锁
         if (tryRelease(arg)) {
             // 如果锁没有嵌套的了, 可以完全释放了的话, 就会进入到这个if中
+            // 2. 如果独占锁释放"完全"，唤醒后继节点
             Node h = head;
             // 唤醒下一个等待的线程
             if (h != null && h.waitStatus != 0)
@@ -717,7 +721,7 @@ public abstract class MyAbstractQueuedSynchronizer {
         // 因为节点入队后，需要把前驱节点的状态设为 Node.SIGNAL(-1)
         if (ws > 0 || !compareAndSetWaitStatus(p, ws, Node.SIGNAL))
             // 如果前驱节点取消或者 CAS 失败，会进到这里唤醒线程
-            LockSupport.unpark(node.thread);
+            MyLockSupport.unpark(node.thread);
         return true;
     }
 
@@ -862,7 +866,7 @@ public abstract class MyAbstractQueuedSynchronizer {
                     return false;
                 if (shouldParkAfterFailedAcquire(p, node) &&
                         nanosTimeout > spinForTimeoutThreshold)
-                    LockSupport.parkNanos(this, nanosTimeout);
+                    MyLockSupport.parkNanos(this, nanosTimeout);
                 if (Thread.interrupted())
                     throw new InterruptedException();
             }
@@ -1030,6 +1034,117 @@ public abstract class MyAbstractQueuedSynchronizer {
 
     protected int tryAcquireShared(int arg) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Returns a collection containing threads that may be waiting to
+     * acquire in exclusive mode. This has the same properties
+     * as {@link #getQueuedThreads} except that it only returns
+     * those threads waiting due to an exclusive acquire.
+     *
+     * @return the collection of threads
+     */
+    public final Collection<Thread> getExclusiveQueuedThreads() {
+        ArrayList<Thread> list = new ArrayList<Thread>();
+        for (Node p = tail; p != null; p = p.prev) {
+            if (!p.isShared()) {
+                Thread t = p.thread;
+                if (t != null)
+                    list.add(t);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Returns a collection containing threads that may be waiting to
+     * acquire in shared mode. This has the same properties
+     * as {@link #getQueuedThreads} except that it only returns
+     * those threads waiting due to a shared acquire.
+     *
+     * @return the collection of threads
+     */
+    public final Collection<Thread> getSharedQueuedThreads() {
+        ArrayList<Thread> list = new ArrayList<Thread>();
+        for (Node p = tail; p != null; p = p.prev) {
+            if (p.isShared()) {
+                Thread t = p.thread;
+                if (t != null)
+                    list.add(t);
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Acquires in shared mode, ignoring interrupts.  Implemented by
+     * first invoking at least once {@link #tryAcquireShared},
+     * returning on success.  Otherwise the thread is queued, possibly
+     * repeatedly blocking and unblocking, invoking {@link
+     * #tryAcquireShared} until success.
+     *
+     * @param arg the acquire argument.  This value is conveyed to
+     *            {@link #tryAcquireShared} but is otherwise uninterpreted
+     *            and can represent anything you like.
+     */
+    public final void acquireShared(int arg) {
+        if (tryAcquireShared(arg) < 0)
+            doAcquireShared(arg);
+    }
+
+    /**
+     * Acquires in shared uninterruptible mode.
+     *
+     * @param arg the acquire argument
+     */
+    private void doAcquireShared(int arg) {
+        final Node node = addWaiter(Node.SHARED);
+        boolean failed = true;
+        try {
+            boolean interrupted = false;
+            for (; ; ) {
+                final Node p = node.predecessor();
+                if (p == head) {
+                    int r = tryAcquireShared(arg);
+                    if (r >= 0) {
+                        setHeadAndPropagate(node, r);
+                        p.next = null; // help GC
+                        if (interrupted)
+                            selfInterrupt();
+                        failed = false;
+                        return;
+                    }
+                }
+                if (shouldParkAfterFailedAcquire(p, node) &&
+                        parkAndCheckInterrupt())
+                    interrupted = true;
+            }
+        } finally {
+            if (failed)
+                cancelAcquire(node);
+        }
+    }
+
+    /**
+     * Acquires in exclusive mode, aborting if interrupted.
+     * Implemented by first checking interrupt status, then invoking
+     * at least once {@link #tryAcquire}, returning on
+     * success.  Otherwise the thread is queued, possibly repeatedly
+     * blocking and unblocking, invoking {@link #tryAcquire}
+     * until success or the thread is interrupted.  This method can be
+     * used to implement method {@link Lock#lockInterruptibly}.
+     *
+     * @param arg the acquire argument.  This value is conveyed to
+     *            {@link #tryAcquire} but is otherwise uninterpreted and
+     *            can represent anything you like.
+     * @throws InterruptedException if the current thread is interrupted
+     */
+    public final void acquireInterruptibly(int arg)
+            throws InterruptedException {
+        if (Thread.interrupted())
+            throw new InterruptedException();
+        if (!tryAcquire(arg))
+            doAcquireInterruptibly(arg);
     }
 
     static final class Node {
@@ -1289,7 +1404,7 @@ public abstract class MyAbstractQueuedSynchronizer {
             int savedState = fullyRelease(node);
             boolean interrupted = false;
             while (!isOnSyncQueue(node)) {
-                LockSupport.park(this);
+                MyLockSupport.park(this);
                 if (Thread.interrupted())
                     interrupted = true;
             }
@@ -1350,7 +1465,7 @@ public abstract class MyAbstractQueuedSynchronizer {
             // 2. checkInterruptWhileWaiting(node) != 0 会到 break，然后退出循环，代表的是线程中断
             while (!isOnSyncQueue(node)) {
                 // 线程挂起
-                LockSupport.park(this);
+                MyLockSupport.park(this);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
             }
@@ -1389,7 +1504,7 @@ public abstract class MyAbstractQueuedSynchronizer {
                     break;
                 }
                 if (nanosTimeout >= spinForTimeoutThreshold)
-                    LockSupport.parkNanos(this, nanosTimeout);
+                    MyLockSupport.parkNanos(this, nanosTimeout);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
                 nanosTimeout = deadline - System.nanoTime();
@@ -1431,7 +1546,7 @@ public abstract class MyAbstractQueuedSynchronizer {
                     timedout = transferAfterCancelledWait(node);
                     break;
                 }
-                LockSupport.parkUntil(this, abstime);
+                MyLockSupport.parkUntil(this, abstime);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
             }
@@ -1483,7 +1598,7 @@ public abstract class MyAbstractQueuedSynchronizer {
                 // spinForTimeoutThreshold 的值是 1000 纳秒，也就是 1 毫秒
                 // 也就是说，如果不到 1 毫秒了，那就不要选择 parkNanos 了，自旋的性能反而更好
                 if (nanosTimeout >= spinForTimeoutThreshold)
-                    LockSupport.parkNanos(this, nanosTimeout);
+                    MyLockSupport.parkNanos(this, nanosTimeout);
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
                 // 得到剩余时间

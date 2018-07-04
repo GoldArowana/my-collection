@@ -966,7 +966,7 @@ public class StampedLock implements java.io.Serializable {
                 state = s;
                 return s;
             }
-        } else if ((LockSupport.nextSecondarySeed() &
+        } else if ((MyLockSupport.nextSecondarySeed() &
                 OVERFLOW_YIELD_RATE) == 0)
             Thread.yield();
         return 0L;
@@ -992,7 +992,7 @@ public class StampedLock implements java.io.Serializable {
                 state = next;
                 return next;
             }
-        } else if ((LockSupport.nextSecondarySeed() &
+        } else if ((MyLockSupport.nextSecondarySeed() &
                 OVERFLOW_YIELD_RATE) == 0)
             Thread.yield();
         return 0L;
@@ -1039,7 +1039,7 @@ public class StampedLock implements java.io.Serializable {
             } else if (spins < 0)
                 spins = (m == WBIT && wtail == whead) ? SPINS : 0;
             else if (spins > 0) {
-                if (LockSupport.nextSecondarySeed() >= 0)
+                if (MyLockSupport.nextSecondarySeed() >= 0)
                     --spins;
             } else if ((p = wtail) == null) { // initialize queue
                 WNode hd = new WNode(WMODE, null);
@@ -1072,7 +1072,7 @@ public class StampedLock implements java.io.Serializable {
                             node.prev = null;
                             return ns;
                         }
-                    } else if (LockSupport.nextSecondarySeed() >= 0 &&
+                    } else if (MyLockSupport.nextSecondarySeed() >= 0 &&
                             --k <= 0)
                         break;
                 }
@@ -1107,7 +1107,7 @@ public class StampedLock implements java.io.Serializable {
                     node.thread = wt;
                     if (p.status < 0 && (p != h || (state & ABITS) != 0L) &&
                             whead == h && node.prev == p)
-                        U.park(false, time);  // emulate LockSupport.park
+                        U.park(false, time);  // emulate MyLockSupport.park
                     node.thread = null;
                     U.putObject(wt, PARKBLOCKER, null);
                     if (interruptible && Thread.interrupted())
@@ -1138,7 +1138,7 @@ public class StampedLock implements java.io.Serializable {
                         return ns;
                     else if (m >= WBIT) {
                         if (spins > 0) {
-                            if (LockSupport.nextSecondarySeed() >= 0)
+                            if (MyLockSupport.nextSecondarySeed() >= 0)
                                 --spins;
                         } else {
                             if (spins == 0) {
@@ -1236,7 +1236,7 @@ public class StampedLock implements java.io.Serializable {
                         }
                         return ns;
                     } else if (m >= WBIT &&
-                            LockSupport.nextSecondarySeed() >= 0 && --k <= 0)
+                            MyLockSupport.nextSecondarySeed() >= 0 && --k <= 0)
                         break;
                 }
             } else if (h != null) {

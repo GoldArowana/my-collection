@@ -81,7 +81,7 @@ import java.lang.reflect.Field;
  * method is designed for use only in constructions of the form:
  *
  * <pre> {@code
- * while (!canProceed()) { ... LockSupport.park(this); }}</pre>
+ * while (!canProceed()) { ... MyLockSupport.park(this); }}</pre>
  * <p>
  * where neither {@code canProceed} nor any other actions prior to the
  * call to {@code park} entail locking or blocking.  Because only one
@@ -104,7 +104,7 @@ import java.lang.reflect.Field;
  *     // Block while not first in queue or cannot acquire lock
  *     while (waiters.peek() != current ||
  *            !locked.compareAndSet(false, true)) {
- *       LockSupport.park(this);
+ *       MyLockSupport.park(this);
  *       if (Thread.interrupted()) // ignore interrupts while waiting
  *         wasInterrupted = true;
  *     }
@@ -116,11 +116,11 @@ import java.lang.reflect.Field;
  *
  *   public void unlock() {
  *     locked.set(false);
- *     LockSupport.unpark(waiters.peek());
+ *     MyLockSupport.unpark(waiters.peek());
  *   }
  * }}</pre>
  */
-public class LockSupport {
+public class MyLockSupport {
     // Hotspot implementation via intrinsics API
     private static final Unsafe UNSAFE;
     private static final long parkBlockerOffset;
@@ -149,7 +149,7 @@ public class LockSupport {
         }
     }
 
-    private LockSupport() {
+    private MyLockSupport() {
     } // Cannot be instantiated.
 
     private static void setBlocker(Thread t, Object arg) {
