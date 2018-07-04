@@ -1,4 +1,4 @@
-package com.king.learn;
+package com.king.learn.concurrent.jdk.locks;
 
 import com.king.learn.concurrent.jdk.locks.MyReentrantLock;
 import org.junit.Test;

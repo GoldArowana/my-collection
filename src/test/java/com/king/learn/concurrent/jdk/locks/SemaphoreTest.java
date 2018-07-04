@@ -1,6 +1,5 @@
-package com.king.learn.semaphore;
+package com.king.learn.concurrent.jdk.locks;
 
-import com.king.learn.concurrent.jdk.locks.MySemaphore;
 import org.junit.Test;
 
 public class SemaphoreTest {

@@ -1,4 +1,4 @@
-package com.king.learn;
+package com.king.learn.string;
 
 public class MyStringBufferTest {
 

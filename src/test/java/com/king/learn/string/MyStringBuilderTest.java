@@ -1,4 +1,4 @@
-package com.king.learn;
+package com.king.learn.string;
 
 import com.king.learn.string.MyStringBuffer;
 import com.king.learn.string.MyStringBuilder;
