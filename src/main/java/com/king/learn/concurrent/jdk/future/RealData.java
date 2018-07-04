@@ -1,4 +1,4 @@
-package com.king.learn.concurrent.future.jdk_future;
+package com.king.learn.concurrent.jdk.future;
 
 import java.util.concurrent.Callable;
 

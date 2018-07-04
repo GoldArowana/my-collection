@@ -1,4 +1,4 @@
-package com.king.learn.concurrent.future.jdk_future;
+package com.king.learn.concurrent.jdk.future;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,7 +21,7 @@ public class Main {
         // 获取真实数据
         try {
             System.out.println("数据=" + futureTask.get());
-        }finally {
+        } finally {
             executor.shutdown();
         }
     }

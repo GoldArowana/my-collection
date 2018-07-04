@@ -1,4 +1,4 @@
-package com.king.learn.concurrent.threadlocal;
+package com.king.learn.concurrent.jdk.threadlocal;
 
 public class ThreadLocalTest {
 
@@ -15,7 +15,7 @@ public class ThreadLocalTest {
     }
 
     public static void display() {
-        System.out.println("我的线程号是:"+Thread.currentThread().getId()+"\t我看到的两个数据结果是"+RESOURCE_1.get()
+        System.out.println("我的线程号是:" + Thread.currentThread().getId() + "\t我看到的两个数据结果是" + RESOURCE_1.get()
                 + ":" + RESOURCE_2.get());
     }
 
