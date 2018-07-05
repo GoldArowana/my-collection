@@ -23,7 +23,7 @@
  *
  */
 
-package com.king.learn.collection8;
+package com.king.learn.collection;
 
 import java.util.*;
 

@@ -23,7 +23,7 @@
  *
  */
 
-package com.king.learn.collection8;
+package com.king.learn.collection;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
