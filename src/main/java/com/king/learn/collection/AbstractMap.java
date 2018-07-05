@@ -105,7 +105,7 @@ public abstract class AbstractMap<K, V> implements Map<K, V> {
     /**
      * Utility method for SimpleEntry and SimpleImmutableEntry.
      * Test for equality, checking for nulls.
-     * <p>
+     *
      * NB: Do not replace with Object.equals until JDK-8015417 is resolved.
      */
     private static boolean eq(Object o1, Object o2) {
@@ -113,8 +113,6 @@ public abstract class AbstractMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * {@inheritDoc}
-     *
      * @implSpec This implementation returns <tt>entrySet().size()</tt>.
      */
     public int size() {
