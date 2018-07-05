@@ -10,22 +10,6 @@ public class ReentrantReadWriteLockTest {
     private static Lock writeLock = lock.writeLock();
     private static Lock readLock = lock.readLock();
 
-    @Test
-    public void t() {
-        new Thread(() -> {
-            readLock.lock();
-
-        }).start();
-
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        readLock.lock();
-
-    }
-
     public static void main(String[] args) {
         new Thread(() -> {
             try {
@@ -90,6 +74,22 @@ public class ReentrantReadWriteLockTest {
         }
 
         writeLock.unlock();
+    }
+
+    @Test
+    public void t() {
+        new Thread(() -> {
+            readLock.lock();
+
+        }).start();
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        readLock.lock();
+
     }
 
     @Test
