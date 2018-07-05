@@ -1,28 +1,3 @@
-/*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
 package com.king.learn.collection;
 
 import java.util.*;
@@ -105,7 +80,7 @@ public abstract class AbstractMap<K, V> implements Map<K, V> {
     /**
      * Utility method for SimpleEntry and SimpleImmutableEntry.
      * Test for equality, checking for nulls.
-     *
+     * <p>
      * NB: Do not replace with Object.equals until JDK-8015417 is resolved.
      */
     private static boolean eq(Object o1, Object o2) {
@@ -827,7 +802,6 @@ public abstract class AbstractMap<K, V> implements Map<K, V> {
         public String toString() {
             return key + "=" + value;
         }
-
     }
 
 }

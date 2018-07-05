@@ -75,8 +75,7 @@ import java.util.function.Consumer;
  * @since 1.5
  */
 public class LinkedBlockingQueue<E> extends AbstractQueue<E>
-        implements BlockingQueue<E>, java.io.Serializable {
-    private static final long serialVersionUID = -6903933977591709194L;
+        implements BlockingQueue<E> {
 
     /*
      * A variant of the "two lock queue" algorithm.  The putLock gates
