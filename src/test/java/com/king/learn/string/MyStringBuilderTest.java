@@ -1,7 +1,5 @@
 package com.king.learn.string;
 
-import com.king.learn.string.MyStringBuffer;
-import com.king.learn.string.MyStringBuilder;
 import org.junit.Test;
 
 public class MyStringBuilderTest {

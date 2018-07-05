@@ -61,7 +61,7 @@ public class MyCyclicBarrier {
     }
 
     /**
-     * Test barrier code, covering the various policies.
+     * ReentrantLockTest2 barrier code, covering the various policies.
      */
     private int dowait(boolean timed, long nanos)
             throws InterruptedException, BrokenBarrierException,

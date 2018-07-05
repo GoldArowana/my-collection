@@ -667,7 +667,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
     // Control values OR'ed as arguments to findNear
 
     /**
-     * Test insertion method.  Adds element if not present, or
+     * ReentrantLockTest2 insertion method.  Adds element if not present, or
      * replaces value if present and onlyIfAbsent is false.
      *
      * @param key          the key
@@ -809,7 +809,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Test deletion method. Locates node, nulls value, appends a
+     * ReentrantLockTest2 deletion method. Locates node, nulls value, appends a
      * deletion marker, unlinks predecessor, removes associated index
      * nodes, and possibly reduces head index level.
      * <p>

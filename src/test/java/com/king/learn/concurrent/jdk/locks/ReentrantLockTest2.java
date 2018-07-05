@@ -2,7 +2,7 @@ package com.king.learn.concurrent.jdk.locks;
 
 import java.util.Scanner;
 
-public class Test {
+public class ReentrantLockTest2 {
     private static MyReentrantLock lock = new MyReentrantLock(true);
     private static Scanner scan = new Scanner(System.in);
 

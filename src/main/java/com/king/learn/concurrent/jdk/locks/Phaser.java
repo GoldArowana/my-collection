@@ -464,7 +464,7 @@ public class Phaser {
     }
 
     /**
-     * Test implementation for methods arrive and arriveAndDeregister.
+     * ReentrantLockTest2 implementation for methods arrive and arriveAndDeregister.
      * Manually tuned to speed up and minimize race windows for the
      * common case of just decrementing unarrived field.
      *

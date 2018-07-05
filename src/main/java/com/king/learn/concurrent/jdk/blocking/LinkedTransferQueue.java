@@ -842,7 +842,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Test implementation of remove(Object)
+     * ReentrantLockTest2 implementation of remove(Object)
      */
     private boolean findAndRemove(Object e) {
         if (e != null) {

@@ -48,7 +48,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
      */
     final Object[] items;
     /**
-     * Test lock guarding all access
+     * ReentrantLockTest2 lock guarding all access
      */
     final ReentrantLock lock;
     /**

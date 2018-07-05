@@ -1,6 +1,5 @@
 package com.king.learn.concurrent.jdk.locks;
 
-import com.king.learn.concurrent.jdk.locks.MyReentrantLock;
 import org.junit.Test;
 
 import java.util.concurrent.CountDownLatch;

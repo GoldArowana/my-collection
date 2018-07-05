@@ -37,4 +37,11 @@ public class SemaphoreTest {
         System.out.println(1);
 
     }
+
+    @Test
+    public void t4() {
+        MySemaphore semaphore = new MySemaphore(1, true);
+        semaphore.release(4);
+        System.out.println(semaphore.availablePermits());
+    }
 }

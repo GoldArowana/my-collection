@@ -56,6 +56,7 @@ public abstract class MyAbstractQueuedSynchronizer {
      * 当前持有锁的线程的引用
      */
     private transient Thread exclusiveOwnerThread;
+
     /**
      * wait queue 的头结点, 懒初始化.  通过setHead,才会被初始化.
      * Note: If head exists, its waitStatus is guaranteed not to be CANCELLED.
@@ -337,6 +338,7 @@ public abstract class MyAbstractQueuedSynchronizer {
      * @return {@code true} if interrupted
      */
     private final boolean parkAndCheckInterrupt() {
+        // 挂起.
         MyLockSupport.park(this);
         return Thread.interrupted();
     }
@@ -373,8 +375,7 @@ public abstract class MyAbstractQueuedSynchronizer {
                     interrupted = true;
             }
         } finally {
-            if (failed)
-                cancelAcquire(node);
+            if (failed) cancelAcquire(node);
         }
     }
 
@@ -899,12 +900,14 @@ public abstract class MyAbstractQueuedSynchronizer {
         return unsafe.compareAndSwapObject(this, tailOffset, expect, update);
     }
 
+
     public final void acquireSharedInterruptibly(int arg)
             throws InterruptedException {
 
+        // 和acquireShared(int arg) 方法相比...就多了一个这句
         if (Thread.interrupted()) throw new InterruptedException();
 
-        // state>0, 就会执行 doAcquireSharedInterruptibly(1)
+        // 尝试获取锁失败, 就会执行 doAcquireSharedInterruptibly(1)
         if (tryAcquireShared(arg) < 0) doAcquireSharedInterruptibly(arg);
 
     }
@@ -1008,14 +1011,18 @@ public abstract class MyAbstractQueuedSynchronizer {
     private void doAcquireSharedInterruptibly(int arg)
             throws InterruptedException {
 
+        // 共享模式将节点添加到队尾
         final Node node = addWaiter(Node.SHARED);
         boolean failed = true;
         try {
             for (; ; ) {
+                // 获取前驱
                 final Node p = node.predecessor();
+                // 如果前驱是头结点, 说明node就是第一个节点
                 if (p == head) {
+                    // 尝试获取锁
                     int r = tryAcquireShared(arg);
-                    // 这句if, 相当于 state == 0
+                    // 如果尝试获取锁成功
                     if (r >= 0) {
                         setHeadAndPropagate(node, r);
                         p.next = null; // help GC
@@ -1023,7 +1030,9 @@ public abstract class MyAbstractQueuedSynchronizer {
                         return;
                     }
                 }
+                // 如果不是第一个节点, 那么判断是否需要挂起
                 if (shouldParkAfterFailedAcquire(p, node) &&
+                        // 挂起
                         parkAndCheckInterrupt())
                     throw new InterruptedException();
             }
@@ -1076,18 +1085,11 @@ public abstract class MyAbstractQueuedSynchronizer {
         return list;
     }
 
-    /**
-     * Acquires in shared mode, ignoring interrupts.  Implemented by
-     * first invoking at least once {@link #tryAcquireShared},
-     * returning on success.  Otherwise the thread is queued, possibly
-     * repeatedly blocking and unblocking, invoking {@link
-     * #tryAcquireShared} until success.
-     *
-     * @param arg the acquire argument.  This value is conveyed to
-     *            {@link #tryAcquireShared} but is otherwise uninterpreted
-     *            and can represent anything you like.
-     */
     public final void acquireShared(int arg) {
+        // 和acquireSharedInterruptibly(int arg) 方法相比,
+        // 就少了判断线程中断, 抛异常
+
+        // 尝试获取锁失败, 就会执行 doAcquireSharedInterruptibly(1)
         if (tryAcquireShared(arg) < 0)
             doAcquireShared(arg);
     }
@@ -1145,6 +1147,16 @@ public abstract class MyAbstractQueuedSynchronizer {
             throw new InterruptedException();
         if (!tryAcquire(arg))
             doAcquireInterruptibly(arg);
+    }
+
+    // 该方法如果头节点不为空，并头节点的下一个节点不为空，
+    // 并且不是共享模式【独占模式，写锁】、并且线程不为空，则返回true。
+    final boolean apparentlyFirstQueuedIsExclusive() {
+        Node h, s;
+        return (h = head) != null &&
+                (s = h.next) != null &&
+                !s.isShared() &&
+                s.thread != null;
     }
 
     static final class Node {
