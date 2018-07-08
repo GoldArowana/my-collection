@@ -50,6 +50,18 @@ import java.util.function.Supplier;
  */
 public class MyThreadLocal<T> {
     /**
+     * The difference between successively generated hash codes - turns
+     * implicit sequential thread-local IDs into near-optimally spread
+     * multiplicative hash values for power-of-two-sized tables.
+     */
+    private static final int HASH_INCREMENT = 0x61c88647;
+    /**
+     * The next hash code to be given out. Updated atomically. Starts at
+     * zero.
+     */
+    private static AtomicInteger nextHashCode =
+            new AtomicInteger();
+    /**
      * ThreadLocals rely on per-thread linear-probe hash maps attached
      * to each thread (Thread.threadLocals and
      * inheritableThreadLocals).  The MyThreadLocal objects act as keys,
@@ -62,24 +74,43 @@ public class MyThreadLocal<T> {
     private final int threadLocalHashCode = nextHashCode();
 
     /**
-     * The next hash code to be given out. Updated atomically. Starts at
-     * zero.
+     * Creates a thread local variable.
+     *
+     * @see #withInitial(Supplier)
      */
-    private static AtomicInteger nextHashCode =
-            new AtomicInteger();
-
-    /**
-     * The difference between successively generated hash codes - turns
-     * implicit sequential thread-local IDs into near-optimally spread
-     * multiplicative hash values for power-of-two-sized tables.
-     */
-    private static final int HASH_INCREMENT = 0x61c88647;
+    public MyThreadLocal() {
+    }
 
     /**
      * Returns the next hash code.
      */
     private static int nextHashCode() {
         return nextHashCode.getAndAdd(HASH_INCREMENT);
+    }
+
+    /**
+     * Creates a thread local variable. The initial value of the variable is
+     * determined by invoking the {@code get} method on the {@code Supplier}.
+     *
+     * @param <S>      the type of the thread local's value
+     * @param supplier the supplier to be used to determine the initial value
+     * @return a new thread local variable
+     * @throws NullPointerException if the specified supplier is null
+     * @since 1.8
+     */
+    public static <S> MyThreadLocal<S> withInitial(Supplier<? extends S> supplier) {
+        return new SuppliedThreadLocal<>(supplier);
+    }
+
+    /**
+     * Factory method to create map of inherited thread locals.
+     * Designed to be called only from Thread constructor.
+     *
+     * @param parentMap the map associated with parent thread
+     * @return a map containing the parent's inheritable bindings
+     */
+    static ThreadLocalMap createInheritedMap(ThreadLocalMap parentMap) {
+        return new ThreadLocalMap(parentMap);
     }
 
     /**
@@ -102,28 +133,6 @@ public class MyThreadLocal<T> {
      */
     protected T initialValue() {
         return null;
-    }
-
-    /**
-     * Creates a thread local variable. The initial value of the variable is
-     * determined by invoking the {@code get} method on the {@code Supplier}.
-     *
-     * @param <S>      the type of the thread local's value
-     * @param supplier the supplier to be used to determine the initial value
-     * @return a new thread local variable
-     * @throws NullPointerException if the specified supplier is null
-     * @since 1.8
-     */
-    public static <S> MyThreadLocal<S> withInitial(Supplier<? extends S> supplier) {
-        return new SuppliedThreadLocal<>(supplier);
-    }
-
-    /**
-     * Creates a thread local variable.
-     *
-     * @see #withInitial(Supplier)
-     */
-    public MyThreadLocal() {
     }
 
     /**
@@ -231,7 +240,7 @@ public class MyThreadLocal<T> {
         try {
             Field field = t.getClass().getDeclaredField("threadLocals");
             field.setAccessible(true);
-            field.set(t,map);
+            field.set(t, map);
         } catch (IllegalAccessException | NoSuchFieldException ignored) {
 
         }
@@ -245,18 +254,7 @@ public class MyThreadLocal<T> {
      * @param firstValue value for the initial entry of the map
      */
     void createMap(Thread t, T firstValue) {
-        setThreadLocalsField(t,new ThreadLocalMap(this, firstValue));
-    }
-
-    /**
-     * Factory method to create map of inherited thread locals.
-     * Designed to be called only from Thread constructor.
-     *
-     * @param parentMap the map associated with parent thread
-     * @return a map containing the parent's inheritable bindings
-     */
-    static ThreadLocalMap createInheritedMap(ThreadLocalMap parentMap) {
-        return new ThreadLocalMap(parentMap);
+        setThreadLocalsField(t, new ThreadLocalMap(this, firstValue));
     }
 
     /**
@@ -302,66 +300,22 @@ public class MyThreadLocal<T> {
     static class ThreadLocalMap {
 
         /**
-         * The entries in this hash map extend WeakReference, using
-         * its main ref field as the key (which is always a
-         * MyThreadLocal object).  Note that null keys (i.e. entry.get()
-         * == null) mean that the key is no longer referenced, so the
-         * entry can be expunged from table.  Such entries are referred to
-         * as "stale entries" in the code that follows.
-         */
-        static class Entry extends WeakReference<MyThreadLocal<?>> {
-            /**
-             * The value associated with this MyThreadLocal.
-             */
-            Object value;
-
-            Entry(MyThreadLocal<?> k, Object v) {
-                super(k);
-                value = v;
-            }
-        }
-
-        /**
          * The initial capacity -- MUST be a power of two.
          */
         private static final int INITIAL_CAPACITY = 16;
-
         /**
          * The table, resized as necessary.
          * table.length MUST always be a power of two.
          */
         private Entry[] table;
-
         /**
          * The number of entries in the table.
          */
         private int size = 0;
-
         /**
          * The next size value at which to resize.
          */
         private int threshold; // Default to 0
-
-        /**
-         * Set the resize threshold to maintain at worst a 2/3 load factor.
-         */
-        private void setThreshold(int len) {
-            threshold = len * 2 / 3;
-        }
-
-        /**
-         * Increment i modulo len.
-         */
-        private static int nextIndex(int i, int len) {
-            return ((i + 1 < len) ? i + 1 : 0);
-        }
-
-        /**
-         * Decrement i modulo len.
-         */
-        private static int prevIndex(int i, int len) {
-            return ((i - 1 >= 0) ? i - 1 : len - 1);
-        }
 
         /**
          * Construct a new map initially containing (firstKey, firstValue).
@@ -404,6 +358,27 @@ public class MyThreadLocal<T> {
                     }
                 }
             }
+        }
+
+        /**
+         * Increment i modulo len.
+         */
+        private static int nextIndex(int i, int len) {
+            return ((i + 1 < len) ? i + 1 : 0);
+        }
+
+        /**
+         * Decrement i modulo len.
+         */
+        private static int prevIndex(int i, int len) {
+            return ((i - 1 >= 0) ? i - 1 : len - 1);
+        }
+
+        /**
+         * Set the resize threshold to maintain at worst a 2/3 load factor.
+         */
+        private void setThreshold(int len) {
+            threshold = len * 2 / 3;
         }
 
         /**
@@ -720,6 +695,26 @@ public class MyThreadLocal<T> {
                 Entry e = tab[j];
                 if (e != null && e.get() == null)
                     expungeStaleEntry(j);
+            }
+        }
+
+        /**
+         * The entries in this hash map extend WeakReference, using
+         * its main ref field as the key (which is always a
+         * MyThreadLocal object).  Note that null keys (i.e. entry.get()
+         * == null) mean that the key is no longer referenced, so the
+         * entry can be expunged from table.  Such entries are referred to
+         * as "stale entries" in the code that follows.
+         */
+        static class Entry extends WeakReference<MyThreadLocal<?>> {
+            /**
+             * The value associated with this MyThreadLocal.
+             */
+            Object value;
+
+            Entry(MyThreadLocal<?> k, Object v) {
+                super(k);
+                value = v;
             }
         }
     }
