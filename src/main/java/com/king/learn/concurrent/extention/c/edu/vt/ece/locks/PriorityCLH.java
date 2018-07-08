@@ -5,10 +5,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class PriorityCLH implements Lock {
-    //final ThreadLocal<QNode> myPred;
+    //final MyThreadLocal<QNode> myPred;
     public static int THREAD_COUNT;
     final ThreadLocal<QNode> myNode;
-    //final ThreadLocal<Integer> mycount;
+    //final MyThreadLocal<Integer> mycount;
     //final AtomicReference<QNode> tail;
     final AtomicReference<QNode> tail = new AtomicReference<QNode>(new QNode());
     AtomicBoolean state = new AtomicBoolean(false);

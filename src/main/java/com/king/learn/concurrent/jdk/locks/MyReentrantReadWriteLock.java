@@ -223,12 +223,12 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
         static final int MAX_COUNT = (1 << SHARED_SHIFT) - 1;
         static final int EXCLUSIVE_MASK = (1 << SHARED_SHIFT) - 1;
         /**
-         * ThreadLocal, 用来记录当前线程持有的读锁数量
+         * MyThreadLocal, 用来记录当前线程持有的读锁数量
          */
         private transient ThreadLocalHoldCounter readHolds;
 
         // 用于缓存，记录"最后一个获取读锁的线程"的读锁重入次数，
-        // 这样就不用到 ThreadLocal 中查询 map 了, 可能会提高性能
+        // 这样就不用到 MyThreadLocal 中查询 map 了, 可能会提高性能
         // 通常读锁的获取很快就会伴随着释放，
         // 显然，在 获取->释放 读锁这段时间，如果没有其他线程获取读锁的话，此缓存就能帮助提高性能
         private transient HoldCounter cachedHoldCounter;
@@ -239,7 +239,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
         private transient int firstReaderHoldCount;
 
         Sync() {
-            // 初始化 readHolds 这个 ThreadLocal 属性
+            // 初始化 readHolds 这个 MyThreadLocal 属性
             readHolds = new ThreadLocalHoldCounter();
             // 为了保证 readHolds 的内存可见性.(不太懂)
             setState(getState()); // ensures visibility of readHolds
@@ -339,15 +339,15 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
                     firstReaderHoldCount--;
             } else {
                 HoldCounter rh = cachedHoldCounter;
-                // 判断cachedHoldCounter是不是空, 是空的话, 要到 ThreadLocal 中取
+                // 判断cachedHoldCounter是不是空, 是空的话, 要到 MyThreadLocal 中取
                 if (rh == null
-                        // 判断 cachedHoldCounter 是否缓存的是当前线程，不是的话要到 ThreadLocal 中取
+                        // 判断 cachedHoldCounter 是否缓存的是当前线程，不是的话要到 MyThreadLocal 中取
                         || rh.tid != getThreadId(current))
                     rh = readHolds.get();
                 int count = rh.count;
                 // 如果计数器小于等于1, 说明该释放了.
                 if (count <= 1) {
-                    // 这一步将 ThreadLocal remove 掉，防止内存泄漏。因为已经不再持有读锁了
+                    // 这一步将 MyThreadLocal remove 掉，防止内存泄漏。因为已经不再持有读锁了
                     readHolds.remove();
                     // 没锁还要释放? 给你抛个异常...
                     if (count <= 0) throw unmatchedUnlockException();
@@ -431,7 +431,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
 
                         // cachedHoldCounter 缓存的是当前线程，但是 count 为 0，
                     else if (rh.count == 0)
-                        // 大家可以思考一下：这里为什么要 set ThreadLocal 呢？(当然，答案肯定不在这块代码中)
+                        // 大家可以思考一下：这里为什么要 set MyThreadLocal 呢？(当然，答案肯定不在这块代码中)
                         readHolds.set(rh);
                     // count 加 1
                     rh.count++;
@@ -489,7 +489,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
                             if (rh == null ||
                                     //或者 如果 cachedHoldCounter 缓存的不是当前线程
                                     rh.tid != getThreadId(current)) {
-                                // 那么到 ThreadLocal 中获取当前线程的 HoldCounter, 没有就自动初始化
+                                // 那么到 MyThreadLocal 中获取当前线程的 HoldCounter, 没有就自动初始化
                                 rh = readHolds.get();
                                 // 如果发现 count == 0，也就是说，纯属上一行代码初始化的，那么执行 remove
                                 // 然后往下两三行，乖乖排队去
@@ -506,7 +506,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
                      * 这块代码我看了蛮久才把握好它是干嘛的，原来只需要知道，它是处理重入的就可以了。
                      * 就是为了确保读锁重入操作能成功，而不是被塞到阻塞队列中等待
                      *
-                     * 另一个信息就是，这里对于 ThreadLocal 变量 readHolds 的处理：
+                     * 另一个信息就是，这里对于 MyThreadLocal 变量 readHolds 的处理：
                      *    如果 get() 后发现 count == 0，居然会做 remove() 操作，
                      *    这行代码对于理解其他代码是有帮助的
                      */
@@ -712,7 +712,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
 
         /**
          * A counter for per-thread read hold counts.
-         * Maintained as a ThreadLocal; cached in cachedHoldCounter
+         * Maintained as a MyThreadLocal; cached in cachedHoldCounter
          * <p>
          * 这个嵌套类的实例用来记录每个线程持有的读锁数量(读锁重入)
          */
@@ -726,7 +726,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
         }
 
         /**
-         * ThreadLocal subclass. Easiest to explicitly define for sake
+         * MyThreadLocal subclass. Easiest to explicitly define for sake
          * of deserialization mechanics.
          * <p>
          * 这时ThreadLocal 的子类

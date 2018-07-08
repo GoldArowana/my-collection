@@ -40,68 +40,14 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-/**
- * This class consists exclusively of static methods that operate on or return
- * collections.  It contains polymorphic algorithms that operate on
- * collections, "wrappers", which return a new collection backed by a
- * specified collection, and a few other odds and ends.
- *
- * <p>The methods of this class all throw a <tt>NullPointerException</tt>
- * if the collections or class objects provided to them are null.
- *
- * <p>The documentation for the polymorphic algorithms contained in this class
- * generally includes a brief description of the <i>implementation</i>.  Such
- * descriptions should be regarded as <i>implementation notes</i>, rather than
- * parts of the <i>specification</i>.  Implementors should feel free to
- * substitute other algorithms, so long as the specification itself is adhered
- * to.  (For example, the algorithm used by <tt>sort</tt> does not have to be
- * a mergesort, but it does have to be <i>stable</i>.)
- *
- * <p>The "destructive" algorithms contained in this class, that is, the
- * algorithms that modify the collection on which they operate, are specified
- * to throw <tt>UnsupportedOperationException</tt> if the collection does not
- * support the appropriate mutation primitive(s), such as the <tt>set</tt>
- * method.  These algorithms may, but are not required to, throw this
- * exception if an invocation would have no effect on the collection.  For
- * example, invoking the <tt>sort</tt> method on an unmodifiable list that is
- * already sorted may or may not throw <tt>UnsupportedOperationException</tt>.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
- *
- * @author Josh Bloch
- * @author Neal Gafter
- * @see Collection
- * @see Set
- * @see List
- * @see Map
- * @since 1.2
- */
-
 public class Collections {
-    /**
-     * The empty set (immutable).  This set is serializable.
-     *
-     * @see #emptySet()
-     */
+
     @SuppressWarnings("rawtypes")
     public static final Set EMPTY_SET = new EmptySet<>();
 
-    // Algorithms
-    /**
-     * The empty list (immutable).  This list is serializable.
-     *
-     * @see #emptyList()
-     */
     @SuppressWarnings("rawtypes")
     public static final List EMPTY_LIST = new EmptyList<>();
-    /**
-     * The empty map (immutable).  This map is serializable.
-     *
-     * @see #emptyMap()
-     * @since 1.3
-     */
+
     @SuppressWarnings("rawtypes")
     public static final Map EMPTY_MAP = new EmptyMap<>();
     /*
