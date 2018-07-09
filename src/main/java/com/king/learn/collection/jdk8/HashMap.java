@@ -422,26 +422,68 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
 
         // 如果原先的table不空, 那么应该把元素都迁移到新的table中.
         if (oldTab != null) {
+            // 遍历所有桶
             for (int j = 0; j < oldCap; ++j) {
                 Node<K, V> e;
+                // 如果第j个桶不为空
                 if ((e = oldTab[j]) != null) {
+                    // 让旧桶指向null
                     oldTab[j] = null;
+                    // 如果第一个桶没有下一个节点, 那么表示 这个桶里只有这一个节点
                     if (e.next == null)
+                        // 所以把这一个节点移过去就好了
                         newTab[e.hash & (newCap - 1)] = e;
+                        // 如果这个桶里还有后续其他的节点, 而且还是红黑树
                     else if (e instanceof TreeNode)
+                        // 那么我们去将树上的节点rehash之后根据hash值放到新地方
                         ((TreeNode<K, V>) e).split(this, newTab, j, oldCap);
+
+                        // 如果后续不是红黑树, 而是链表
                     else { // preserve order
+
+                            /*这里的操作就是 (e.hash & oldCap) == 0 这一句，
+                            这一句如果是true，表明(e.hash & (newCap - 1))还会和
+                            e.hash & (oldCap - 1)一样。因为oldCap和newCap是2的次幂，
+                            并且newCap是oldCap的两倍，就相当于oldCap的唯一
+                            一个二进制的1向高位移动了一位
+                            (e.hash & oldCap) == 0就代表了(e.hash & (newCap - 1))还会和
+                            e.hash & (oldCap - 1)一样。
+
+                            比如原来容量是16，那么就相当于e.hash & 0x1111
+                            （0x1111就是oldCap - 1 = 16 - 1 = 15），
+                            现在容量扩大了一倍，就是32，那么rehash定位就等于
+                            e.hash & 0x11111 （0x11111就是newCap - 1 = 32 - 1 = 31）
+                            现在(e.hash & oldCap) == 0就表明了
+                            e.hash & 0x10000 == 0，这样的话，不就是
+                            已知： e.hash &  0x1111 = hash定位值Value
+                             并且  e.hash & 0x10000 = 0
+                            那么   e.hash & 0x11111 不也就是
+                            原来的hash定位值Value吗？
+
+                            那么就只需要根据这一个二进制位就可以判断下次hash定位在
+                            哪里了。将hash冲突的元素连在两条链表上放在相应的位置
+                            不就行了嘛。*/
+
                         Node<K, V> loHead = null, loTail = null;
                         Node<K, V> hiHead = null, hiTail = null;
                         Node<K, V> next;
                         do {
                             next = e.next;
+                            // 如果e的hash值在扩容前和扩容后在同一个桶中
                             if ((e.hash & oldCap) == 0) {
+                                // 如果是这个桶的第一个节点
                                 if (loTail == null)
+                                    // 那么走这里
                                     loHead = e;
+                                    // 如果不是这个桶的第一个节点,
                                 else
+                                    // 那么就尾插就好了
                                     loTail.next = e;
+                                // 更新尾部
                                 loTail = e;
+
+                                // 如果e的hash值在扩容前和扩容后不在同一个桶中,
+                                // 说明e的位置在[j + oldCap]这个桶中
                             } else {
                                 if (hiTail == null)
                                     hiHead = e;
@@ -450,10 +492,14 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
                                 hiTail = e;
                             }
                         } while ((e = next) != null);
+
+                        // 由于上面的循环, 把原先一个桶中的链表(红黑树)分组分成了两个链表(红黑树)
+                        // 在这里把两个链表中hash值小的那个, 插入到新的map中
                         if (loTail != null) {
                             loTail.next = null;
                             newTab[j] = loHead;
                         }
+                        // 在这里把两个链表中hash值大的那个, 插入到新的map中
                         if (hiTail != null) {
                             hiTail.next = null;
                             newTab[j + oldCap] = hiHead;
@@ -462,20 +508,23 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
                 }
             }
         }
+        // 返回新的HashMap
         return newTab;
     }
 
     /**
-     * Replaces all linked nodes in bin at index for given hash unless
-     * table is too small, in which case resizes instead.
+     * 将链表变为红黑树, 如果链表太短, 那就只是扩容, 而不是变为树
      */
     final void treeifyBin(Node<K, V>[] tab, int hash) {
         int n, index;
         Node<K, V> e;
+        // 如果table是空, 或者table数组太小(桶的个数太小), 那么就扩容, 而不是转为树
         if (tab == null || (n = tab.length) < MIN_TREEIFY_CAPACITY)
             resize();
+            // 否则判断相应hash位置是否为空, 不为空就进行转换
         else if ((e = tab[index = (n - 1) & hash]) != null) {
             TreeNode<K, V> hd = null, tl = null;
+            // 把单项链表转化为双向链表
             do {
                 TreeNode<K, V> p = replacementTreeNode(e, null);
                 if (tl == null)
@@ -487,30 +536,20 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
                 tl = p;
             } while ((e = e.next) != null);
             if ((tab[index] = hd) != null)
+                // 进行红黑树的转换
                 hd.treeify(tab);
         }
     }
 
     /**
-     * Copies all of the mappings from the specified map to this map.
-     * These mappings will replace any mappings that this map had for
-     * any of the keys currently in the specified map.
-     *
-     * @param m mappings to be stored in this map
-     * @throws NullPointerException if the specified map is null
+     * 将参数m的所有key-value都插入进来
      */
     public void putAll(Map<? extends K, ? extends V> m) {
         putMapEntries(m, true);
     }
 
     /**
-     * Removes the mapping for the specified key from this map if present.
-     *
-     * @param key key whose mapping is to be removed from the map
-     * @return the previous value associated with <tt>key</tt>, or
-     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * (A <tt>null</tt> return can also indicate that the map
-     * previously associated <tt>null</tt> with <tt>key</tt>.)
+     * 根据key删除
      */
     public V remove(Object key) {
         Node<K, V> e;
@@ -519,31 +558,42 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * Implements Map.remove and related methods
+     * 删除map中的节点
      *
-     * @param hash       hash for key
-     * @param key        the key
-     * @param value      the value to match if matchValue, else ignored
-     * @param matchValue if true only remove if value is equal
+     * @param hash       key的hash值
+     * @param key        要删除的key
+     * @param value      如果matchValue打开着, 就需要传这个参数, 否则没用.
+     * @param matchValue 如果是true, 那么只有在value 相等(equals)的时候才会删除.
      * @param movable    if false do not move other nodes while removing
-     * @return the node, or null if none
+     * @return 返回被删除的节点. 如果没有这个节点, 那么就返回null
      */
     final Node<K, V> removeNode(int hash, Object key, Object value,
                                 boolean matchValue, boolean movable) {
         Node<K, V>[] tab;
         Node<K, V> p;
         int n, index;
-        if ((tab = table) != null && (n = tab.length) > 0 &&
-                (p = tab[index = (n - 1) & hash]) != null) {
+        // table不空
+        if ((tab = table) != null
+                // table的数组大小大于0(有桶存在, table不空, 但是数组等于0, 还是相当于没有)
+                && (n = tab.length) > 0
+                // 相应的hash位置有节点存在
+                && (p = tab[index = (n - 1) & hash]) != null) {
             Node<K, V> node = null, e;
             K k;
             V v;
+            // 先判断第一个节点的key
             if (p.hash == hash &&
                     ((k = p.key) == key || (key != null && key.equals(k))))
                 node = p;
+
+                // 如果第一个节点不是吗, 那么判断第二个节点
             else if ((e = p.next) != null) {
+                // 判断是不是红黑树结构
                 if (p instanceof TreeNode)
+                    // 如果是红黑树, 那么就直接调用红黑树的方法来寻找
                     node = ((TreeNode<K, V>) p).getTreeNode(hash, key);
+
+                    // 如果不是红黑树, 那么就是链表了, 进行遍历查找
                 else {
                     do {
                         if (e.hash == hash &&
