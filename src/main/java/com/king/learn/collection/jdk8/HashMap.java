@@ -729,11 +729,21 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         return putVal(hash(key), key, value, true, true);
     }
 
+    /**
+     * 根据key 和 value 来删除元素
+     */
     @Override
     public boolean remove(Object key, Object value) {
         return removeNode(hash(key), key, value, true, true) != null;
     }
 
+    /**
+     * 替换key和value来寻找节点, 然后替换这个节点的value
+     * 如果替换成功那么返回true, 没替换就返回false
+     * <p>
+     * 只根据key来查找, 是只判断key
+     * 根据key和value来查找 是不仅key要相等, 而且还要判断value是否相等.
+     */
     @Override
     public boolean replace(K key, V oldValue, V newValue) {
         Node<K, V> e;
@@ -747,8 +757,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         return false;
     }
 
-    // Overrides of JDK8 Map extension methods
-
+    /**
+     * 根据key来进行value的替换, 然后返回原来的value
+     * 如果根据key没找到相应的元素, 那么当然就无法替换了, 直接返回null
+     */
     @Override
     public V replace(K key, V value) {
         Node<K, V> e;
@@ -761,11 +773,17 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         return null;
     }
 
+    /**
+     * 如果没有这个key, 就进行计算
+     */
     @Override
     public V computeIfAbsent(K key,
                              Function<? super K, ? extends V> mappingFunction) {
+        // mappingFunction不能是空
         if (mappingFunction == null)
             throw new NullPointerException();
+
+        // hash值
         int hash = hash(key);
         Node<K, V>[] tab;
         Node<K, V> first;
@@ -773,15 +791,22 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         int binCount = 0;
         TreeNode<K, V> t = null;
         Node<K, V> old = null;
-        if (size > threshold || (tab = table) == null ||
-                (n = tab.length) == 0)
+
+        // 需要扩容
+        if (size > threshold || (tab = table) == null || (n = tab.length) == 0)
             n = (tab = resize()).length;
+
+        // 尝试获取相应hash位置的第一个元素, 如果获取到了(不为null), 那么进入这个if
         if ((first = tab[i = (n - 1) & hash]) != null) {
+            // 如果是红黑树,那么用红黑树的get方法获取
             if (first instanceof TreeNode)
                 old = (t = (TreeNode<K, V>) first).getTreeNode(hash, key);
+
+                // 不是红黑树, 那么就是链表了
             else {
                 Node<K, V> e = first;
                 K k;
+                // 遍历桶, 判断桶中是否有
                 do {
                     if (e.hash == hash &&
                             ((k = e.key) == key || (key != null && key.equals(k)))) {
@@ -792,51 +817,88 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
                 } while ((e = e.next) != null);
             }
             V oldValue;
+            // 如果原先有数据, 那么返回直接返回oldValue, 不执行mappingFunction
             if (old != null && (oldValue = old.value) != null) {
                 afterNodeAccess(old);
                 return oldValue;
             }
         }
+        // 执行mappingFunction
         V v = mappingFunction.apply(key);
+
         if (v == null) {
             return null;
+
+            // 如果mappingFunction 返回的不是null, 而且old不是空(说明原先有这个key对应的value)
         } else if (old != null) {
+            // 那么进行替换, 然后进行返回
             old.value = v;
+            // 这里是空实现
             afterNodeAccess(old);
             return v;
+
+            // 如果mappingFunction 返回的不是null, 而且old是空, 而且t不为空, 那么将执行这里
+            // t表示的是桶里的第一个节点, 而且是TreeNode类型(红黑树节点)
         } else if (t != null)
+            // 那么就put进树里
             t.putTreeVal(this, tab, hash, key, v);
+
+            // 到这里说明 没有这个key对应的value, 而且还不是红黑树, (不是红黑树, 那么只能是链表了)
         else {
+            // 创建一个新的节点, 然后采用头插法进行链表插入
             tab[i] = newNode(hash, key, v, first);
+            // 看看是否有有必要进行树的转换
             if (binCount >= TREEIFY_THRESHOLD - 1)
                 treeifyBin(tab, hash);
         }
+        // 算一次map的修改
         ++modCount;
+        // map插入了一个节点
         ++size;
+        // 这里是空实现
         afterNodeInsertion(true);
         return v;
     }
 
+    /**
+     * 如果存在, 那么会执行remappingFunction
+     */
     public V computeIfPresent(K key,
                               BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+        // remappingFunction不能为空
         if (remappingFunction == null)
             throw new NullPointerException();
         Node<K, V> e;
         V oldValue;
+        // 计算hash值
         int hash = hash(key);
+        // 如果根据key获取到了节点
         if ((e = getNode(hash, key)) != null &&
+                // 如果获取到的这个节点的value不为空
                 (oldValue = e.value) != null) {
+            // 执行 remappingFunction
             V v = remappingFunction.apply(key, oldValue);
+            // 如果remappingFunction返回的不是空
             if (v != null) {
+                // 那么就进行替换
                 e.value = v;
+                // 这里是空实现
                 afterNodeAccess(e);
+                // 直接返回
                 return v;
+
+                // 如果返回的v是空
             } else
+                // 那么根据key进行删除节点
                 removeNode(hash, key, null, false, true);
         }
+        // 根据key没获取到相应的节点, 或者节点的value是空, 那么直接就返回null
         return null;
     }
 
+    /**
+     * 前面分析了computeIfPresent 和 computeIfAbsent, 对这个方法不太感兴趣, 以后再说吧
+     */
     @Override
     public V compute(K key,
                      BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
