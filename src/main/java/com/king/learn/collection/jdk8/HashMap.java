@@ -953,6 +953,9 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         return v;
     }
 
+    /**
+     * 前面分析了computeIfPresent 和 computeIfAbsent, 对这个方法不太感兴趣, 以后再说吧
+     */
     @Override
     public V merge(K key, V value,
                    BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
@@ -1014,22 +1017,39 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         return value;
     }
 
+    /**
+     * @param action 相应的行为
+     */
     @Override
     public void forEach(BiConsumer<? super K, ? super V> action) {
         Node<K, V>[] tab;
+        // 首先action不能是null
         if (action == null)
             throw new NullPointerException();
+
+        // map中要有k-v, 而且table表不为null (好歹是有意义的map吧)
         if (size > 0 && (tab = table) != null) {
+            // 在这里记录一下被修改的次数
             int mc = modCount;
+            // 遍历桶
             for (int i = 0; i < tab.length; ++i) {
+                // 比那里桶中的所有节点
                 for (Node<K, V> e = tab[i]; e != null; e = e.next)
+                    // 对所有节点(k-v)进行action的相应操作
                     action.accept(e.key, e.value);
             }
+            // 如果在执行for循环的期间中途被修改过, 那么modCount和mc值就会不一样了
+            // 意思就是, 在遍历时, 如果被修改过难么就行抛异常
             if (modCount != mc)
                 throw new ConcurrentModificationException();
         }
     }
 
+    /**
+     * 替换全部, 感觉实现跟上面差不多,就不具体分析了.
+     *
+     * @param function replace具体的策略实现
+     */
     @Override
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         Node<K, V>[] tab;
@@ -1048,31 +1068,34 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * Returns a shallow copy of this <tt>HashMap</tt> instance: the keys and
-     * values themselves are not cloned.
-     *
-     * @return a shallow copy of this map
+     * 浅克隆, 只是克隆了HashMap这个实例, 而没有克隆所有的key-value键值对
      */
     @SuppressWarnings("unchecked")
     @Override
     public Object clone() {
         HashMap<K, V> result;
         try {
+            // 克隆, 然后用result来引用
             result = (HashMap<K, V>) super.clone();
         } catch (CloneNotSupportedException e) {
             // this shouldn't happen, since we are Cloneable
             throw new InternalError(e);
         }
+        // 重新初始化
         result.reinitialize();
+        // 把当前map的所有k-v插入进result中
         result.putMapEntries(this, false);
         return result;
     }
 
-    // These methods are also used when serializing HashSets
+    // 返回负载因子
     final float loadFactor() {
         return loadFactor;
     }
 
+    // 返回容量, 也就是table的数组大小, 也就是桶的个数
+    // 如果table==null, 那么就返回threshold
+    // threshold 表示当HashMap的size大于threshold时会执行resize操作
     final int capacity() {
         return (table != null) ? table.length :
                 (threshold > 0) ? threshold :
@@ -1080,32 +1103,20 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * Save the state of the <tt>HashMap</tt> instance to a stream (i.e.,
-     * serialize it).
-     *
-     * @serialData The <i>capacity</i> of the HashMap (the length of the
-     * bucket array) is emitted (int), followed by the
-     * <i>size</i> (an int, the number of key-value
-     * mappings), followed by the key (Object) and value (Object)
-     * for each key-value mapping.  The key-value mappings are
-     * emitted in no particular order.
+     * 序列化, 写
      */
-    private void writeObject(java.io.ObjectOutputStream s)
-            throws IOException {
+    private void writeObject(java.io.ObjectOutputStream s) throws IOException {
         int buckets = capacity();
         // Write out the threshold, loadfactor, and any hidden stuff
         s.defaultWriteObject();
         s.writeInt(buckets);
         s.writeInt(size);
+        // 写所有的k-v
         internalWriteEntries(s);
     }
 
-    /* ------------------------------------------------------------ */
-    // Cloning and serialization
-
     /**
-     * Reconstitute the {@code HashMap} instance from a stream (i.e.,
-     * deserialize it).
+     * 从流中读取数据, 构建一个HashMap
      */
     private void readObject(java.io.ObjectInputStream s)
             throws IOException, ClassNotFoundException {
@@ -1115,14 +1126,19 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new InvalidObjectException("Illegal load factor: " +
                     loadFactor);
+        // 读buckets, 也就是table数组的大小
         s.readInt();                // Read and ignore number of buckets
+        // 读size, 也就是k-v 的个数
         int mappings = s.readInt(); // Read number of mappings (size)
+
+        // size<0 说明不正常
         if (mappings < 0)
             throw new InvalidObjectException("Illegal mappings count: " +
                     mappings);
-        else if (mappings > 0) { // (if zero, use defaults)
-            // Size the table using given load factor only if within
-            // range of 0.25...4.0
+
+        else if (mappings > 0) { // (如果size==0, 那么直接使用默认值就可以了, 没必要执行下面这段)
+            // Size the table using given load factor only if within range of 0.25...4.0
+            // 负载因子在0.25和4.0之间的时候
             float lf = Math.min(Math.max(0.25f, loadFactor), 4.0f);
             float fc = (float) mappings / lf + 1.0f;
             int cap = ((fc < DEFAULT_INITIAL_CAPACITY) ?
@@ -1134,8 +1150,7 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
             threshold = ((cap < MAXIMUM_CAPACITY && ft < MAXIMUM_CAPACITY) ?
                     (int) ft : Integer.MAX_VALUE);
 
-            // Check Map.Entry[].class since it's the nearest public type to
-            // what we're actually creating.
+            // Check Map.Entry[].class since it's the nearest public type to what we're actually creating.
             SharedSecrets.getJavaOISAccess().checkArray(s, Entry[].class, cap);
             @SuppressWarnings({"rawtypes", "unchecked"})
             Node<K, V>[] tab = (Node<K, V>[]) new Node[cap];
@@ -1152,31 +1167,30 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
-    // Create a regular (non-tree) node
+    /**
+     * 创建一个节点, (不是树节点)
+     */
     Node<K, V> newNode(int hash, K key, V value, Node<K, V> next) {
         return new Node<>(hash, key, value, next);
     }
 
-    // For conversion from TreeNodes to plain nodes
+    // 树节点转化为普通的节点
     Node<K, V> replacementNode(Node<K, V> p, Node<K, V> next) {
         return new Node<>(p.hash, p.key, p.value, next);
     }
 
-    // Create a tree bin node
+    // 创建一个树的二叉节点
     TreeNode<K, V> newTreeNode(int hash, K key, V value, Node<K, V> next) {
         return new TreeNode<>(hash, key, value, next);
     }
 
-    // For treeifyBin
+    // 树形化, 将普通节点替换为红黑树节点
     TreeNode<K, V> replacementTreeNode(Node<K, V> p, Node<K, V> next) {
         return new TreeNode<>(p.hash, p.key, p.value, next);
     }
 
-    /* ------------------------------------------------------------ */
-    // iterators
-
     /**
-     * Reset to initial default state.  Called by clone and readObject.
+     * 重新设置初始值.  Called by clone and readObject.
      */
     void reinitialize() {
         table = null;
@@ -1198,15 +1212,14 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     void afterNodeRemoval(Node<K, V> p) {
     }
 
-    /* ------------------------------------------------------------ */
-    // spliterators
-
-    // Called only from writeObject, to ensure compatible ordering.
+    // 被 writeObject方法调用, to ensure compatible ordering.
     void internalWriteEntries(java.io.ObjectOutputStream s) throws IOException {
         Node<K, V>[] tab;
         if (size > 0 && (tab = table) != null) {
+            // 遍历
             for (int i = 0; i < tab.length; ++i) {
                 for (Node<K, V> e = tab[i]; e != null; e = e.next) {
+                    // 序列化写出k-v
                     s.writeObject(e.key);
                     s.writeObject(e.value);
                 }
@@ -1215,8 +1228,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * Basic hash bin node, used for most entries.  (See below for
-     * TreeNode subclass, and in LinkedHashMap for its Entry subclass.)
+     * 基本的hash节点
+     * 红黑树的节点是本Node类的子类, LinkedHashMap的自类也是
      */
     static class Node<K, V> implements Entry<K, V> {
         final int hash;
@@ -1247,12 +1260,14 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
             return Objects.hashCode(key) ^ Objects.hashCode(value);
         }
 
+        // 设置新value, 并返回旧value
         public final V setValue(V newValue) {
             V oldValue = value;
             value = newValue;
             return oldValue;
         }
 
+        //判断本Node实例与其他Entry类型的实例是否相等.
         public final boolean equals(Object o) {
             if (o == this)
                 return true;
@@ -1266,6 +1281,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * 迭代器
+     * TODO
+     */
     static class HashMapSpliterator<K, V> {
         final HashMap<K, V> map;
         Node<K, V> current;          // current node
@@ -1302,6 +1321,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * 迭代器
+     * TODO
+     */
     static final class KeySpliterator<K, V>
             extends HashMapSpliterator<K, V>
             implements Spliterator<K> {
@@ -1373,18 +1396,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
-    /* ------------------------------------------------------------ */
-    // LinkedHashMap support
-
-
-    /*
-     * The following package-protected methods are designed to be
-     * overridden by LinkedHashMap, but not by any other subclass.
-     * Nearly all other internal methods are also package-protected
-     * but are declared final, so can be used by LinkedHashMap, view
-     * classes, and HashSet.
+    /**
+     * 迭代器
+     * TODO
      */
-
     static final class ValueSpliterator<K, V>
             extends HashMapSpliterator<K, V>
             implements Spliterator<V> {
@@ -1455,6 +1470,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * 迭代器
+     * TODO
+     */
     static final class EntrySpliterator<K, V>
             extends HashMapSpliterator<K, V>
             implements Spliterator<Entry<K, V>> {
@@ -1527,9 +1546,7 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * Entry for Tree bins. Extends LinkedHashMap.Entry (which in turn
-     * extends Node) so can be used as extension of either regular or
-     * linked node.
+     * 红黑树节点
      */
     static final class TreeNode<K, V> extends LinkedHashMap.Entry<K, V> {
         TreeNode<K, V> parent;  // red-black tree links
@@ -2112,6 +2129,9 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * Key 集合
+     */
     final class KeySet extends AbstractSet<K> {
         public final int size() {
             return size;
@@ -2153,6 +2173,9 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * values 集合
+     */
     final class Values extends AbstractCollection<V> {
         public final int size() {
             return size;
@@ -2190,6 +2213,9 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * k-v 集合
+     */
     final class EntrySet extends AbstractSet<Entry<K, V>> {
         public final int size() {
             return size;
@@ -2242,6 +2268,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * 迭代器
+     * TODO
+     */
     abstract class HashIterator {
         Node<K, V> next;        // next entry to return
         Node<K, V> current;     // current entry
@@ -2290,6 +2320,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * 迭代器
+     * TODO
+     */
     final class KeyIterator extends HashIterator
             implements Iterator<K> {
         public final K next() {
@@ -2297,6 +2331,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
+    /**
+     * 迭代器
+     * TODO
+     */
     final class ValueIterator extends HashIterator
             implements Iterator<V> {
         public final V next() {
@@ -2304,9 +2342,10 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         }
     }
 
-    /* ------------------------------------------------------------ */
-    // Tree bins
-
+    /**
+     * 迭代器
+     * TODO
+     */
     final class EntryIterator extends HashIterator
             implements Iterator<Entry<K, V>> {
         public final Entry<K, V> next() {
