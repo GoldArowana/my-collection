@@ -606,20 +606,39 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
                     } while ((e = e.next) != null);
                 }
             }
-            if (node != null && (!matchValue || (v = node.value) == value ||
+            // 如果根据key, 在map中找到了相应的节点
+            if (node != null
+                    // 如果matchValue为false, 那么进入这段if
+                    // 或者如果matchValue为true, 而且value 相等, 那么进入这段if
+                    && (!matchValue || (v = node.value) == value ||
                     (value != null && value.equals(v)))) {
+                // 如果是红黑树结构的, 那么调用红黑树的方法来进行删除
                 if (node instanceof TreeNode)
                     ((TreeNode<K, V>) node).removeTreeNode(this, tab, movable);
+                    // 如果是链表结构(因为不是红黑树,那就只能是链表了), 而且要删除的是桶里的第一个节点
                 else if (node == p)
                     tab[index] = node.next;
+
+                    // 如果是链表结构, 而且要删除的节点还是不是桶里的第一个节点
                 else
                     p.next = node.next;
+
+                // 删除也算修改map结构, 所以计数器+1
                 ++modCount;
+
+                // map的k-v个数减一
                 --size;
+
+                //这里是空实现, 里面什么也没有
                 afterNodeRemoval(node);
+
+                //返回这个被删除的节点
                 return node;
             }
         }
+        // 如果没找到这个key,
+        // 或者matchValue开关 开着的情况下, value不相等, 导致了没删除节点
+        // 那么就返回null
         return null;
     }
 
