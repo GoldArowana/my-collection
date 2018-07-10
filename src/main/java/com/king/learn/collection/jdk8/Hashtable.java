@@ -313,16 +313,8 @@ public class Hashtable<K, V> extends Dictionary<K, V>
         return null;
     }
 
-    // Views
-
     /**
-     * Copies all of the mappings from the specified map to this hashtable.
-     * These mappings will replace any mappings that this hashtable had for any
-     * of the keys currently in the specified map.
-     *
-     * @param t mappings to be stored in this map
-     * @throws NullPointerException if the specified map is null
-     * @since 1.2
+     * 把一个map里的所有元素put进当前的hash table中
      */
     public synchronized void putAll(Map<? extends K, ? extends V> t) {
         for (Map.Entry<? extends K, ? extends V> e : t.entrySet())
@@ -330,7 +322,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Clears this hashtable so that it contains no keys.
+     * 清空hash table
      */
     public synchronized void clear() {
         Entry<?, ?> tab[] = table;
@@ -341,11 +333,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Creates a shallow copy of this hashtable. All the structure of the
-     * hashtable itself is copied, but the keys and values are not cloned.
-     * This is a relatively expensive operation.
-     *
-     * @return a clone of the hashtable
+     * 浅克隆
      */
     public synchronized Object clone() {
         try {
@@ -366,16 +354,6 @@ public class Hashtable<K, V> extends Dictionary<K, V>
         }
     }
 
-    /**
-     * Returns a string representation of this <tt>Hashtable</tt> object
-     * in the form of a set of entries, enclosed in braces and separated
-     * by the ASCII characters "<tt>,&nbsp;</tt>" (comma and space). Each
-     * entry is rendered as the key, an equals sign <tt>=</tt>, and the
-     * associated element, where the <tt>toString</tt> method is used to
-     * convert the key and element to strings.
-     *
-     * @return a string representation of this hashtable
-     */
     public synchronized String toString() {
         int max = size() - 1;
         if (max == -1)
@@ -399,6 +377,9 @@ public class Hashtable<K, V> extends Dictionary<K, V>
         }
     }
 
+    /**
+     * 返回一个enumeration. 通过这些方法可以枚举对象集合中的所有元素
+     */
     private <T> Enumeration<T> getEnumeration(int type) {
         if (count == 0) {
             return Collections.emptyEnumeration();
@@ -407,6 +388,9 @@ public class Hashtable<K, V> extends Dictionary<K, V>
         }
     }
 
+    /**
+     * 获取迭代器
+     */
     private <T> Iterator<T> getIterator(int type) {
         if (count == 0) {
             return Collections.emptyIterator();
@@ -416,19 +400,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Returns a {@link Set} view of the keys contained in this map.
-     * The set is backed by the map, so changes to the map are
-     * reflected in the set, and vice-versa.  If the map is modified
-     * while an iteration over the set is in progress (except through
-     * the iterator's own <tt>remove</tt> operation), the results of
-     * the iteration are undefined.  The set supports element removal,
-     * which removes the corresponding mapping from the map, via the
-     * <tt>Iterator.remove</tt>, <tt>Set.remove</tt>,
-     * <tt>removeAll</tt>, <tt>retainAll</tt>, and <tt>clear</tt>
-     * operations.  It does not support the <tt>add</tt> or <tt>addAll</tt>
-     * operations.
-     *
-     * @since 1.2
+     * @return 获取Key的集合, 而且是被SynchronizedSet封装过得.
      */
     public Set<K> keySet() {
         if (keySet == null)
@@ -437,20 +409,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Returns a {@link Set} view of the mappings contained in this map.
-     * The set is backed by the map, so changes to the map are
-     * reflected in the set, and vice-versa.  If the map is modified
-     * while an iteration over the set is in progress (except through
-     * the iterator's own <tt>remove</tt> operation, or through the
-     * <tt>setValue</tt> operation on a map entry returned by the
-     * iterator) the results of the iteration are undefined.  The set
-     * supports element removal, which removes the corresponding
-     * mapping from the map, via the <tt>Iterator.remove</tt>,
-     * <tt>Set.remove</tt>, <tt>removeAll</tt>, <tt>retainAll</tt> and
-     * <tt>clear</tt> operations.  It does not support the
-     * <tt>add</tt> or <tt>addAll</tt> operations.
-     *
-     * @since 1.2
+     * 获取Key-value的集合, 而且是被SynchronizedSet封装过得.
      */
     public Set<Map.Entry<K, V>> entrySet() {
         if (entrySet == null)
@@ -459,19 +418,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Returns a {@link Collection} view of the values contained in this map.
-     * The collection is backed by the map, so changes to the map are
-     * reflected in the collection, and vice-versa.  If the map is
-     * modified while an iteration over the collection is in progress
-     * (except through the iterator's own <tt>remove</tt> operation),
-     * the results of the iteration are undefined.  The collection
-     * supports element removal, which removes the corresponding
-     * mapping from the map, via the <tt>Iterator.remove</tt>,
-     * <tt>Collection.remove</tt>, <tt>removeAll</tt>,
-     * <tt>retainAll</tt> and <tt>clear</tt> operations.  It does not
-     * support the <tt>add</tt> or <tt>addAll</tt> operations.
-     *
-     * @since 1.2
+     * @return 获取value的集合, 而且是被SynchronizedSet封装过得.
      */
     public Collection<V> values() {
         if (values == null)
@@ -480,27 +427,27 @@ public class Hashtable<K, V> extends Dictionary<K, V>
         return values;
     }
 
-    // Comparison and hashing
-
     /**
-     * Compares the specified Object with this Map for equality,
-     * as per the definition in the Map interface.
-     *
-     * @param o object to be compared for equality with this hashtable
-     * @return true if the specified Object is equal to this Map
-     * @see Map#equals(Object)
-     * @since 1.2
+     * 判断本map和另一个map是否相等
      */
     public synchronized boolean equals(Object o) {
+        // 同一个对象, 当然相等了
         if (o == this)
             return true;
 
+        // 不实现自Map, 那肯定没法比啊, 就不相等.
         if (!(o instanceof Map))
             return false;
         Map<?, ?> t = (Map<?, ?>) o;
+
+        // 两个集合元素的个数不一样多, 那当然就不等价了
         if (t.size() != size())
             return false;
 
+        // 下面就是遍历其中一个map 的key, 然后拿着这个key去另一个map里get,
+        // get不到就直接判断出了两个map不相等
+        // 如果get到了, 那么继续判断value是不是相等, 如果value不相等, 那么直接判断出了两个map不相等
+        // 如果value也相等, 那么遍历下一个, 继续判断, 直到判断出不相等, 或者判断到最后, 认定了两个map相等.
         try {
             Iterator<Map.Entry<K, V>> i = entrySet().iterator();
             while (i.hasNext()) {
@@ -515,9 +462,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
                         return false;
                 }
             }
-        } catch (ClassCastException unused) {
-            return false;
-        } catch (NullPointerException unused) {
+        } catch (ClassCastException | NullPointerException unused) {
             return false;
         }
 
@@ -525,11 +470,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Returns the hash code value for this Map as per the definition in the
-     * Map interface.
-     *
-     * @see Map#hashCode()
-     * @since 1.2
+     * 计算hash值
      */
     public synchronized int hashCode() {
         /*
