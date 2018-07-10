@@ -186,7 +186,7 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     final void putMapEntries(Map<? extends K, ? extends V> m, boolean evict) {
         int s = m.size();
         if (s > 0) {
-            // 判断table是否已经初始化
+            // 判断table是否已经初始化, 如果没有初始化
             if (table == null) { // pre-size
                 float ft = ((float) s / loadFactor) + 1.0F;
                 int t = ((ft < (float) MAXIMUM_CAPACITY) ?
@@ -1282,7 +1282,6 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * 迭代器
      * TODO
      */
     static class HashMapSpliterator<K, V> {
@@ -1322,15 +1321,20 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * 迭代器
      * TODO
      */
     static final class KeySpliterator<K, V>
             extends HashMapSpliterator<K, V>
             implements Spliterator<K> {
-        KeySpliterator(HashMap<K, V> m, int origin, int fence, int est,
+
+        KeySpliterator(HashMap<K, V> m,
+                       int origin,
+                       int fence,
+                       int est,
                        int expectedModCount) {
+
             super(m, origin, fence, est, expectedModCount);
+
         }
 
         public KeySpliterator<K, V> trySplit() {
@@ -1397,7 +1401,6 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * 迭代器
      * TODO
      */
     static final class ValueSpliterator<K, V>
@@ -1471,7 +1474,6 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * 迭代器
      * TODO
      */
     static final class EntrySpliterator<K, V>
