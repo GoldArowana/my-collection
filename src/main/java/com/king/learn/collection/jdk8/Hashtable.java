@@ -8,14 +8,11 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class Hashtable<K, V>
-        extends Dictionary<K, V>
+public class Hashtable<K, V> extends Dictionary<K, V>
         implements Map<K, V>, Cloneable, Serializable {
 
-    /**
-     * use serialVersionUID from JDK 1.0.2 for interoperability
-     */
     private static final long serialVersionUID = 1421746759512286392L;
+
     /**
      * The maximum size of array to allocate.
      * Some VMs reserve some header words in an array.
@@ -23,64 +20,55 @@ public class Hashtable<K, V>
      * OutOfMemoryError: Requested array size exceeds VM limit
      */
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
-    // Types of Enumerations/Iterations
+
+    // Types of Enumerations/Iterations 常亮, 迭代器的枚举类型.
     private static final int KEYS = 0;
     private static final int VALUES = 1;
     private static final int ENTRIES = 2;
+
     /**
-     * The hash table data.
+     * hash桶数组
      */
     private transient Entry<?, ?>[] table;
+
     /**
-     * The total number of entries in the hash table.
+     * hash table里的元素个数
      */
     private transient int count;
     /**
-     * The table is rehashed when its size exceeds this threshold.  (The
-     * value of this field is (int)(capacity * loadFactor).)
-     *
-     * @serial
+     * 阈值, 当超过这个值的时候就会扩容.
+     * 这个字段的值是(int)(capacity * loadFactor)
      */
     private int threshold;
-    /**
-     * The load factor for the hashtable.
-     *
-     * @serial
-     */
-    private float loadFactor;
-    /**
-     * The number of times this Hashtable has been structurally modified
-     * Structural modifications are those that change the number of entries in
-     * the Hashtable or otherwise modify its internal structure (e.g.,
-     * rehash).  This field is used to make iterators on Collection-views of
-     * the Hashtable fail-fast.  (See ConcurrentModificationException).
-     */
-    private transient int modCount = 0;
-    /**
-     * Each of these fields are initialized to contain an instance of the
-     * appropriate view the first time this view is requested.  The views are
-     * stateless, so there's no reason to create more than one of each.
-     */
-    private transient volatile Set<K> keySet;
-    private transient volatile Set<Map.Entry<K, V>> entrySet;
-    private transient volatile Collection<V> values;
 
     /**
-     * Constructs a new, empty hashtable with the specified initial
-     * capacity and the specified load factor.
-     *
-     * @param initialCapacity the initial capacity of the hashtable.
-     * @param loadFactor      the load factor of the hashtable.
-     * @throws IllegalArgumentException if the initial capacity is less
-     *                                  than zero, or if the load factor is nonpositive.
+     * 负载因子
+     */
+    private float loadFactor;
+
+    /**
+     * hash table的结构被修改的次数
+     */
+    private transient int modCount = 0;
+
+    /**
+     * key集合, value集合, key-value集合
+     */
+    private transient volatile Set<K> keySet;
+    private transient volatile Collection<V> values;
+    private transient volatile Set<Map.Entry<K, V>> entrySet;
+
+    /**
+     * 构造器, 可以根据给定的初始大小和负载因子初始化.
      */
     public Hashtable(int initialCapacity, float loadFactor) {
+        //检测参数的有效性
         if (initialCapacity < 0)
-            throw new IllegalArgumentException("Illegal Capacity: " +
-                    initialCapacity);
+            throw new IllegalArgumentException("Illegal Capacity: " + initialCapacity);
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal Load: " + loadFactor);
 
+        // 如果是0, 那么就改为1
         if (initialCapacity == 0)
             initialCapacity = 1;
         this.loadFactor = loadFactor;
@@ -89,33 +77,21 @@ public class Hashtable<K, V>
     }
 
     /**
-     * Constructs a new, empty hashtable with the specified initial capacity
-     * and default load factor (0.75).
-     *
-     * @param initialCapacity the initial capacity of the hashtable.
-     * @throws IllegalArgumentException if the initial capacity is less
-     *                                  than zero.
+     * 根据给定的初始大小来进行构造, 负载因子则用默认的0.75
      */
     public Hashtable(int initialCapacity) {
         this(initialCapacity, 0.75f);
     }
 
     /**
-     * Constructs a new, empty hashtable with a default initial capacity (11)
-     * and load factor (0.75).
+     * 根据默认大小11 和 默认负载因子0.75 来进行构造
      */
     public Hashtable() {
         this(11, 0.75f);
     }
 
     /**
-     * Constructs a new hashtable with the same mappings as the given
-     * Map.  The hashtable is created with an initial capacity sufficient to
-     * hold the mappings in the given Map and a default load factor (0.75).
-     *
-     * @param t the map whose mappings are to be placed in this map.
-     * @throws NullPointerException if the specified map is null.
-     * @since 1.2
+     * 根据给定的map来构造hash table
      */
     public Hashtable(Map<? extends K, ? extends V> t) {
         this(Math.max(2 * t.size(), 11), 0.75f);
@@ -123,67 +99,35 @@ public class Hashtable<K, V>
     }
 
     /**
-     * Returns the number of keys in this hashtable.
-     *
-     * @return the number of keys in this hashtable.
+     * 返回hash table中的元素的个数
      */
     public synchronized int size() {
         return count;
     }
 
     /**
-     * Tests if this hashtable maps no keys to values.
-     *
-     * @return <code>true</code> if this hashtable maps no keys to values;
-     * <code>false</code> otherwise.
+     * 判断hash table是否为空
      */
     public synchronized boolean isEmpty() {
         return count == 0;
     }
 
     /**
-     * Returns an enumeration of the keys in this hashtable.
-     *
-     * @return an enumeration of the keys in this hashtable.
-     * @see Enumeration
-     * @see #elements()
-     * @see #keySet()
-     * @see Map
+     * 返回一个enumeration. 通过这些方法可以枚举对象集合中的所有key
      */
     public synchronized Enumeration<K> keys() {
         return this.<K>getEnumeration(KEYS);
     }
 
     /**
-     * Returns an enumeration of the values in this hashtable.
-     * Use the Enumeration methods on the returned object to fetch the elements
-     * sequentially.
-     *
-     * @return an enumeration of the values in this hashtable.
-     * @see Enumeration
-     * @see #keys()
-     * @see #values()
-     * @see Map
+     * 返回一个enumeration. 通过这些方法可以枚举对象集合中的所有value
      */
     public synchronized Enumeration<V> elements() {
         return this.<V>getEnumeration(VALUES);
     }
 
     /**
-     * Tests if some key maps into the specified value in this hashtable.
-     * This operation is more expensive than the {@link #containsKey
-     * containsKey} method.
-     *
-     * <p>Note that this method is identical in functionality to
-     * {@link #containsValue containsValue}, (which is part of the
-     * {@link Map} interface in the collections framework).
-     *
-     * @param value a value to search for
-     * @return <code>true</code> if and only if some key maps to the
-     * <code>value</code> argument in this hashtable as
-     * determined by the <tt>equals</tt> method;
-     * <code>false</code> otherwise.
-     * @throws NullPointerException if the value is <code>null</code>
+     * 判断该value是否存在于hash table中
      */
     public synchronized boolean contains(Object value) {
         if (value == null) {
@@ -202,30 +146,15 @@ public class Hashtable<K, V>
     }
 
     /**
-     * Returns true if this hashtable maps one or more keys to this value.
-     *
-     * <p>Note that this method is identical in functionality to {@link
-     * #contains contains} (which predates the {@link Map} interface).
-     *
-     * @param value value whose presence in this hashtable is to be tested
-     * @return <tt>true</tt> if this map maps one or more keys to the
-     * specified value
-     * @throws NullPointerException if the value is <code>null</code>
-     * @since 1.2
+     * 调用的上面那个contains.
+     * 判断该value是否存在于hash table中
      */
     public boolean containsValue(Object value) {
         return contains(value);
     }
 
     /**
-     * Tests if the specified object is a key in this hashtable.
-     *
-     * @param key possible key
-     * @return <code>true</code> if and only if the specified object
-     * is a key in this hashtable, as determined by the
-     * <tt>equals</tt> method; <code>false</code> otherwise.
-     * @throws NullPointerException if the key is <code>null</code>
-     * @see #contains(Object)
+     * 判断该key是否存在于hash table中
      */
     public synchronized boolean containsKey(Object key) {
         Entry<?, ?> tab[] = table;
@@ -240,19 +169,7 @@ public class Hashtable<K, V>
     }
 
     /**
-     * Returns the value to which the specified key is mapped,
-     * or {@code null} if this map contains no mapping for the key.
-     *
-     * <p>More formally, if this map contains a mapping from a key
-     * {@code k} to a value {@code v} such that {@code (key.equals(k))},
-     * then this method returns {@code v}; otherwise it returns
-     * {@code null}.  (There can be at most one such mapping.)
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the value to which the specified key is mapped, or
-     * {@code null} if this map contains no mapping for the key
-     * @throws NullPointerException if the specified key is null
-     * @see #put(Object, Object)
+     * 根据key获取value
      */
     @SuppressWarnings("unchecked")
     public synchronized V get(Object key) {
@@ -268,11 +185,10 @@ public class Hashtable<K, V>
     }
 
     /**
-     * Increases the capacity of and internally reorganizes this
-     * hashtable, in order to accommodate and access its entries more
-     * efficiently.  This method is called automatically when the
-     * number of keys in the hashtable exceeds this hashtable's capacity
-     * and load factor.
+     * 重新把元素hash到相应的位置上, 扩容时候的操作.
+     * 这个不必要加重入锁, 因为私有方法都是本类里调用的, 而本类里公开的方法都是synchronize
+     * 如果这里加了锁, 那也是重入而已.
+     * TODO
      */
     @SuppressWarnings("unchecked")
     protected void rehash() {
@@ -305,10 +221,17 @@ public class Hashtable<K, V>
         }
     }
 
+    /**
+     * 添加新的元素
+     * 这个不必要加重入锁, 因为私有方法都是本类里调用的, 而本类里公开的方法都是synchronize
+     * 如果这里加了锁, 那也是重入而已.
+     */
     private void addEntry(int hash, K key, V value, int index) {
+        // 算一次结构修改
         modCount++;
 
         Entry<?, ?> tab[] = table;
+        // 如果超过了阈值, 那么就进行扩容
         if (count >= threshold) {
             // Rehash the table if the threshold is exceeded
             rehash();
@@ -318,7 +241,7 @@ public class Hashtable<K, V>
             index = (hash & 0x7FFFFFFF) % tab.length;
         }
 
-        // Creates the new entry.
+        // 创建新节点, 头插法插入到桶中
         @SuppressWarnings("unchecked")
         Entry<K, V> e = (Entry<K, V>) tab[index];
         tab[index] = new Entry<>(hash, key, value, e);
@@ -326,54 +249,46 @@ public class Hashtable<K, V>
     }
 
     /**
-     * Maps the specified <code>key</code> to the specified
-     * <code>value</code> in this hashtable. Neither the key nor the
-     * value can be <code>null</code>. <p>
-     * <p>
-     * The value can be retrieved by calling the <code>get</code> method
-     * with a key that is equal to the original key.
+     * 插入新的元素
      *
-     * @param key   the hashtable key
-     * @param value the value
-     * @return the previous value of the specified key in this hashtable,
-     * or <code>null</code> if it did not have one
-     * @throws NullPointerException if the key or value is
-     *                              <code>null</code>
-     * @see Object#equals(Object)
-     * @see #get(Object)
+     * @return 返回执行这个put之前的, 这个key对应的value的值.
+     * 如果key之前不存在, 那么之前的value当然就是null了
      */
     public synchronized V put(K key, V value) {
-        // Make sure the value is not null
+        // 验证参数有效性, value不允许插入null
         if (value == null) {
             throw new NullPointerException();
         }
 
         // Makes sure the key is not already in the hashtable.
         Entry<?, ?> tab[] = table;
+
+        // 因为直接调用了hashcode, 所以key不能是null, 不然就是空指针异常
         int hash = key.hashCode();
         int index = (hash & 0x7FFFFFFF) % tab.length;
+
+        // 遍历, 看看hash table里是否已经有了这个key, 如果有了那么就替换value
         @SuppressWarnings("unchecked")
         Entry<K, V> entry = (Entry<K, V>) tab[index];
         for (; entry != null; entry = entry.next) {
             if ((entry.hash == hash) && entry.key.equals(key)) {
                 V old = entry.value;
+                // 新value 替换旧value
                 entry.value = value;
+                // 返回旧value
                 return old;
             }
         }
 
+        // 如果执行到了这里, 说明hash table里原来没有这个key, 所以直接添加这个元素
         addEntry(hash, key, value, index);
+        // 由于没有旧value, 返回null
         return null;
     }
 
     /**
-     * Removes the key (and its corresponding value) from this
-     * hashtable. This method does nothing if the key is not in the hashtable.
-     *
-     * @param key the key that needs to be removed
-     * @return the value to which the key had been mapped in this hashtable,
-     * or <code>null</code> if the key did not have a mapping
-     * @throws NullPointerException if the key is <code>null</code>
+     * 根据key进行删除元素, 并且返回被删除的那个key的value
+     * 如果没有这个key, 那当然就没删除了, 那就返回null
      */
     public synchronized V remove(Object key) {
         Entry<?, ?> tab[] = table;
@@ -486,7 +401,7 @@ public class Hashtable<K, V>
 
     private <T> Enumeration<T> getEnumeration(int type) {
         if (count == 0) {
-            return com.king.learn.collection.jdk8.Collections.emptyEnumeration();
+            return Collections.emptyEnumeration();
         } else {
             return new Enumerator<>(type, false);
         }
@@ -494,7 +409,7 @@ public class Hashtable<K, V>
 
     private <T> Iterator<T> getIterator(int type) {
         if (count == 0) {
-            return com.king.learn.collection.jdk8.Collections.emptyIterator();
+            return Collections.emptyIterator();
         } else {
             return new Enumerator<>(type, true);
         }
@@ -517,7 +432,7 @@ public class Hashtable<K, V>
      */
     public Set<K> keySet() {
         if (keySet == null)
-            keySet = com.king.learn.collection.jdk8.Collections.synchronizedSet(new KeySet(), this);
+            keySet = Collections.synchronizedSet(new KeySet(), this);
         return keySet;
     }
 
@@ -539,7 +454,7 @@ public class Hashtable<K, V>
      */
     public Set<Map.Entry<K, V>> entrySet() {
         if (entrySet == null)
-            entrySet = com.king.learn.collection.jdk8.Collections.synchronizedSet(new EntrySet(), this);
+            entrySet = Collections.synchronizedSet(new EntrySet(), this);
         return entrySet;
     }
 
@@ -560,7 +475,7 @@ public class Hashtable<K, V>
      */
     public Collection<V> values() {
         if (values == null)
-            values = com.king.learn.collection.jdk8.Collections.synchronizedCollection(new ValueCollection(),
+            values = Collections.synchronizedCollection(new ValueCollection(),
                     this);
         return values;
     }
