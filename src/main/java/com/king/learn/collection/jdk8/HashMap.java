@@ -1851,14 +1851,6 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
             return ((parent != null) ? root() : this).find(h, k, null);
         }
 
-        /* ------------------------------------------------------------ */
-        // Red-black tree methods, all adapted from CLR
-
-        /**
-         * Forms tree of the nodes linked from this node.
-         *
-         * @return root of tree
-         */
         final void treeify(Node<K, V>[] tab) {
             TreeNode<K, V> root = null;
             for (TreeNode<K, V> x = this, next; x != null; x = next) {

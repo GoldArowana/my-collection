@@ -3656,9 +3656,6 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
             }
         }
 
-        /* ------------------------------------------------------------ */
-        // Red-black tree methods, all adapted from CLR
-
         static <K, V> TreeNode<K, V> balanceDeletion(TreeNode<K, V> root,
                                                      TreeNode<K, V> x) {
             for (TreeNode<K, V> xp, xpl, xpr; ; ) {
