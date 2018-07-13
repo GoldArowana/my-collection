@@ -348,7 +348,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
                 // 如果参数onlyIfAbsent==false的话,就会进行覆盖
                 if (!onlyIfAbsent || oldValue == null)
                     e.value = value;
-                // 这个afterNodeAccess是一个空实现, 里面什么都没有
+                // HashMap里这个afterNodeAccess是一个空实现, 里面什么都没有
+                // LinkedHashMap里,如果是根据访问顺序来排序的话, 当节点被访问的时候, 就把这个节点放到尾部
                 afterNodeAccess(e);
                 return oldValue;
             }
@@ -361,7 +362,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         if (++size > threshold)
             resize();
 
-        // 这个afterNodeInsertion是一个空实现, 里面什么都没有
+        // HashMap里这个afterNodeInsertion是一个空实现, 里面什么都没有
+        // LinkedHashMap里就不是空操作了, 而是在链表尾进行添加.
         afterNodeInsertion(evict);
 
         // 因为插入这个这个key是直线不存在的,
@@ -629,7 +631,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
                 // map的k-v个数减一
                 --size;
 
-                //这里是空实现, 里面什么也没有
+                // HashMap的话这里是空实现, 里面什么也没有
+                // LinkedHashMap的话就有用了, 就是删除链表尾部
                 afterNodeRemoval(node);
 
                 //返回这个被删除的节点
@@ -751,6 +754,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         if ((e = getNode(hash(key), key)) != null &&
                 ((v = e.value) == oldValue || (v != null && v.equals(oldValue)))) {
             e.value = newValue;
+            // HashMap里这个afterNodeAccess是一个空实现, 里面什么都没有
+            // LinkedHashMap里,如果是根据访问顺序来排序的话, 当节点被访问的时候, 就把这个节点放到尾部
             afterNodeAccess(e);
             return true;
         }
@@ -767,6 +772,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         if ((e = getNode(hash(key), key)) != null) {
             V oldValue = e.value;
             e.value = value;
+            // HashMap里这个afterNodeAccess是一个空实现, 里面什么都没有
+            // LinkedHashMap里,如果是根据访问顺序来排序的话, 当节点被访问的时候, 就把这个节点放到尾部
             afterNodeAccess(e);
             return oldValue;
         }
@@ -819,6 +826,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
             V oldValue;
             // 如果原先有数据, 那么返回直接返回oldValue, 不执行mappingFunction
             if (old != null && (oldValue = old.value) != null) {
+                // HashMap里这个afterNodeAccess是一个空实现, 里面什么都没有
+                // LinkedHashMap里,如果是根据访问顺序来排序的话, 当节点被访问的时候, 就把这个节点放到尾部
                 afterNodeAccess(old);
                 return oldValue;
             }
@@ -833,7 +842,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         } else if (old != null) {
             // 那么进行替换, 然后进行返回
             old.value = v;
-            // 这里是空实现
+            // HashMap里这个afterNodeAccess是一个空实现, 里面什么都没有
+            // LinkedHashMap里,如果是根据访问顺序来排序的话, 当节点被访问的时候, 就把这个节点放到尾部
             afterNodeAccess(old);
             return v;
 
@@ -855,7 +865,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
         ++modCount;
         // map插入了一个节点
         ++size;
-        // 这里是空实现
+        // HashMap里这个afterNodeInsertion是一个空实现, 里面什么都没有
+        // LinkedHashMap里就不是空操作了, 而是在链表尾进行添加.
         afterNodeInsertion(true);
         return v;
     }
@@ -882,7 +893,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
             if (v != null) {
                 // 那么就进行替换
                 e.value = v;
-                // 这里是空实现
+                // HashMap里这个afterNodeAccess是一个空实现, 里面什么都没有
+                // LinkedHashMap里,如果是根据访问顺序来排序的话, 当节点被访问的时候, 就把这个节点放到尾部
                 afterNodeAccess(e);
                 // 直接返回
                 return v;
@@ -948,6 +960,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
             }
             ++modCount;
             ++size;
+            // HashMap里这个afterNodeInsertion是一个空实现, 里面什么都没有
+            // LinkedHashMap里就不是空操作了, 而是在链表尾进行添加.
             afterNodeInsertion(true);
         }
         return v;
@@ -997,6 +1011,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
                 v = value;
             if (v != null) {
                 old.value = v;
+                // HashMap里这个afterNodeAccess是一个空实现, 里面什么都没有
+                // LinkedHashMap里,如果是根据访问顺序来排序的话, 当节点被访问的时候, 就把这个节点放到尾部
                 afterNodeAccess(old);
             } else
                 removeNode(hash, key, null, false, true);
@@ -1012,6 +1028,8 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
             }
             ++modCount;
             ++size;
+            // HashMap里这个afterNodeInsertion是一个空实现, 里面什么都没有
+            // LinkedHashMap里就不是空操作了, 而是在链表尾进行添加.
             afterNodeInsertion(true);
         }
         return value;
@@ -1229,7 +1247,7 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
 
     /**
      * 基本的hash节点
-     * 红黑树的节点是本Node类的子类, LinkedHashMap的自类也是
+     * 红黑树的节点是本Node类的子类, LinkedHashMap的Node也是继承了这里
      */
     static class Node<K, V> implements Entry<K, V> {
         final int hash;

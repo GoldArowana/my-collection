@@ -1,32 +1,8 @@
-/*
- * Copyright (c) 2000, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
 package com.king.learn.collection.jdk8;
 
 import sun.misc.SharedSecrets;
 
+import java.io.*;
 import java.lang.reflect.Array;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -34,135 +10,29 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
- * This class implements the <tt>Map</tt> interface with a hash table, using
- * reference-equality in place of object-equality when comparing keys (and
- * values).  In other words, in an <tt>IdentityHashMap</tt>, two keys
- * <tt>k1</tt> and <tt>k2</tt> are considered equal if and only if
- * <tt>(k1==k2)</tt>.  (In normal <tt>Map</tt> implementations (like
- * <tt>HashMap</tt>) two keys <tt>k1</tt> and <tt>k2</tt> are considered equal
- * if and only if <tt>(k1==null ? k2==null : k1.equals(k2))</tt>.)
- *
- * <p><b>This class is <i>not</i> a general-purpose <tt>Map</tt>
- * implementation!  While this class implements the <tt>Map</tt> interface, it
- * intentionally violates <tt>Map's</tt> general contract, which mandates the
- * use of the <tt>equals</tt> method when comparing objects.  This class is
- * designed for use only in the rare cases wherein reference-equality
- * semantics are required.</b>
- *
- * <p>A typical use of this class is <i>topology-preserving object graph
- * transformations</i>, such as serialization or deep-copying.  To perform such
- * a transformation, a program must maintain a "node table" that keeps track
- * of all the object references that have already been processed.  The node
- * table must not equate distinct objects even if they happen to be equal.
- * Another typical use of this class is to maintain <i>proxy objects</i>.  For
- * example, a debugging facility might wish to maintain a proxy object for
- * each object in the program being debugged.
- *
- * <p>This class provides all of the optional map operations, and permits
- * <tt>null</tt> values and the <tt>null</tt> key.  This class makes no
- * guarantees as to the order of the map; in particular, it does not guarantee
- * that the order will remain constant over time.
- *
- * <p>This class provides constant-time performance for the basic
- * operations (<tt>get</tt> and <tt>put</tt>), assuming the system
- * identity hash function ({@link System#identityHashCode(Object)})
- * disperses elements properly among the buckets.
- *
- * <p>This class has one tuning parameter (which affects performance but not
- * semantics): <i>expected maximum size</i>.  This parameter is the maximum
- * number of key-value mappings that the map is expected to hold.  Internally,
- * this parameter is used to determine the number of buckets initially
- * comprising the hash table.  The precise relationship between the expected
- * maximum size and the number of buckets is unspecified.
- *
- * <p>If the size of the map (the number of key-value mappings) sufficiently
- * exceeds the expected maximum size, the number of buckets is increased.
- * Increasing the number of buckets ("rehashing") may be fairly expensive, so
- * it pays to create identity hash maps with a sufficiently large expected
- * maximum size.  On the other hand, iteration over collection views requires
- * time proportional to the number of buckets in the hash table, so it
- * pays not to set the expected maximum size too high if you are especially
- * concerned with iteration performance or memory usage.
- *
- * <p><strong>Note that this implementation is not synchronized.</strong>
- * If multiple threads access an identity hash map concurrently, and at
- * least one of the threads modifies the map structurally, it <i>must</i>
- * be synchronized externally.  (A structural modification is any operation
- * that adds or deletes one or more mappings; merely changing the value
- * associated with a key that an instance already contains is not a
- * structural modification.)  This is typically accomplished by
- * synchronizing on some object that naturally encapsulates the map.
- * <p>
- * If no such object exists, the map should be "wrapped" using the
- * {@link com.king.learn.collection.jdk8.Collections#synchronizedMap Collections.synchronizedMap}
- * method.  This is best done at creation time, to prevent accidental
- * unsynchronized access to the map:<pre>
- *   Map m = Collections.synchronizedMap(new IdentityHashMap(...));</pre>
- *
- * <p>The iterators returned by the <tt>iterator</tt> method of the
- * collections returned by all of this class's "collection view
- * methods" are <i>fail-fast</i>: if the map is structurally modified
- * at any time after the iterator is created, in any way except
- * through the iterator's own <tt>remove</tt> method, the iterator
- * will throw a {@link ConcurrentModificationException}.  Thus, in the
- * face of concurrent modification, the iterator fails quickly and
- * cleanly, rather than risking arbitrary, non-deterministic behavior
- * at an undetermined time in the future.
- *
- * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
- * as it is, generally speaking, impossible to make any hard guarantees in the
- * presence of unsynchronized concurrent modification.  Fail-fast iterators
- * throw <tt>ConcurrentModificationException</tt> on a best-effort basis.
- * Therefore, it would be wrong to write a program that depended on this
- * exception for its correctness: <i>fail-fast iterators should be used only
- * to detect bugs.</i>
- *
- * <p>Implementation note: This is a simple <i>linear-probe</i> hash table,
- * as described for example in texts by Sedgewick and Knuth.  The array
- * alternates holding keys and values.  (This has better locality for large
- * tables than does using separate arrays.)  For many JRE implementations
- * and operation mixes, this class will yield better performance than
- * {@link com.king.learn.collection.jdk8.HashMap} (which uses <i>chaining</i> rather than linear-probing).
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
- *
- * @author Doug Lea and Josh Bloch
- * @see System#identityHashCode(Object)
- * @see Object#hashCode()
- * @see Collection
- * @see Map
- * @see com.king.learn.collection.jdk8.HashMap
- * @see TreeMap
- * @since 1.4
+ * IdentityHashMap允许key值重复，但是——key必须是两个不同的对象，
+ * 即对于k1和k2，当k1==k2时，IdentityHashMap认为两个key相等
  */
+public class IdentityHashMap<K, V> extends AbstractMap<K, V>
+        implements Map<K, V>, Serializable, Cloneable {
 
-public class IdentityHashMap<K, V>
-        extends com.king.learn.collection.jdk8.AbstractMap<K, V>
-        implements Map<K, V>, java.io.Serializable, Cloneable {
     /**
-     * Value representing null keys inside tables.
+     * 用来表示null的key键
      */
     static final Object NULL_KEY = new Object();
+
     /**
-     * The initial capacity used by the no-args constructor.
-     * MUST be a power of two.  The value 32 corresponds to the
-     * (specified) expected maximum size of 21, given a load factor
-     * of 2/3.
+     * 在无参构造器中使用的默认大小, 必须是2的指数.
+     * 由于负载因子是2/3, 实际的大小将会是21
      */
     private static final int DEFAULT_CAPACITY = 32;
     /**
-     * The minimum capacity, used if a lower value is implicitly specified
-     * by either of the constructors with arguments.  The value 4 corresponds
-     * to an expected maximum size of 2, given a load factor of 2/3.
-     * MUST be a power of two.
+     * 在所有带参构造器中, 用于检查传递的容量是否太小.
+     * 最小也得是4, 经过乘以负载因子2/3后, 实际大小会是2
      */
     private static final int MINIMUM_CAPACITY = 4;
     /**
-     * The maximum capacity, used if a higher value is implicitly specified
-     * by either of the constructors with arguments.
-     * MUST be a power of two <= 1<<29.
+     * 最大容量限制
      * <p>
      * In fact, the map can hold no more than MAXIMUM_CAPACITY-1 items
      * because it has to have at least one slot with the key == null
@@ -171,42 +41,31 @@ public class IdentityHashMap<K, V>
     private static final int MAXIMUM_CAPACITY = 1 << 29;
     private static final long serialVersionUID = 8188218128353913216L;
     /**
-     * The table, resized as necessary. Length MUST always be a power of two.
+     * 哈希桶数组
      */
     transient Object[] table; // non-private to simplify nested class access
     /**
-     * The number of key-value mappings contained in this identity hash map.
-     *
-     * @serial
+     * map里k-v的个数
      */
     int size;
     /**
-     * The number of modifications, to support fast-fail iterators
+     * map的结构被修改的次数
      */
     transient int modCount;
     /**
-     * This field is initialized to contain an instance of the entry set
-     * view the first time this view is requested.  The view is stateless,
-     * so there's no reason to create more than one.
+     * 所有k-v 的集合
      */
     private transient Set<Entry<K, V>> entrySet;
 
     /**
-     * Constructs a new, empty identity hash map with a default expected
-     * maximum size (21).
+     * 默认大小32, 实际能容纳21个
      */
     public IdentityHashMap() {
         init(DEFAULT_CAPACITY);
     }
 
     /**
-     * Constructs a new, empty map with the specified expected maximum size.
-     * Putting more than the expected number of key-value mappings into
-     * the map may cause the internal data structure to grow, which may be
-     * somewhat time-consuming.
-     *
-     * @param expectedMaxSize the expected maximum size of the map
-     * @throws IllegalArgumentException if <tt>expectedMaxSize</tt> is negative
+     * 传入期待的容量, 然后会自动计算, 然后初始化
      */
     public IdentityHashMap(int expectedMaxSize) {
         if (expectedMaxSize < 0)
@@ -216,38 +75,30 @@ public class IdentityHashMap<K, V>
     }
 
     /**
-     * Constructs a new identity hash map containing the keys-value mappings
-     * in the specified map.
-     *
-     * @param m the map whose mappings are to be placed into this map
-     * @throws NullPointerException if the specified map is null
+     * 根据所给的map来进行构造.
      */
     public IdentityHashMap(Map<? extends K, ? extends V> m) {
-        // Allow for a bit of growth
+        // Allow for a bit of growth, 特意多加了一部分容量
         this((int) ((1 + m.size()) * 1.1));
         putAll(m);
     }
 
     /**
-     * Use NULL_KEY for key if it is null.
+     * 用于处理值为null的key
      */
     private static Object maskNull(Object key) {
         return (key == null ? NULL_KEY : key);
     }
 
     /**
-     * Returns internal representation of null key back to caller as null.
+     * maskNull的逆操作
      */
     static final Object unmaskNull(Object key) {
         return (key == NULL_KEY ? null : key);
     }
 
     /**
-     * Returns the appropriate capacity for the given expected maximum size.
-     * Returns the smallest power of two between MINIMUM_CAPACITY and
-     * MAXIMUM_CAPACITY, inclusive, that is greater than (3 *
-     * expectedMaxSize)/2, if such a number exists.  Otherwise returns
-     * MAXIMUM_CAPACITY.
+     * 根据所给的期待值, 返回相应的容量大小值
      */
     private static int capacity(int expectedMaxSize) {
         // assert expectedMaxSize >= 0;
@@ -847,8 +698,8 @@ public class IdentityHashMap<K, V>
      * IdentityHashMap.  The key-value mappings are emitted in no
      * particular order.
      */
-    private void writeObject(java.io.ObjectOutputStream s)
-            throws java.io.IOException {
+    private void writeObject(ObjectOutputStream s)
+            throws IOException {
         // Write out and any hidden stuff
         s.defaultWriteObject();
 
@@ -870,15 +721,15 @@ public class IdentityHashMap<K, V>
      * Reconstitutes the <tt>IdentityHashMap</tt> instance from a stream (i.e.,
      * deserializes it).
      */
-    private void readObject(java.io.ObjectInputStream s)
-            throws java.io.IOException, ClassNotFoundException {
+    private void readObject(ObjectInputStream s)
+            throws IOException, ClassNotFoundException {
         // Read in any hidden stuff
         s.defaultReadObject();
 
         // Read in size (number of Mappings)
         int size = s.readInt();
         if (size < 0)
-            throw new java.io.StreamCorruptedException
+            throw new StreamCorruptedException
                     ("Illegal mappings count: " + size);
         int cap = capacity(size);
         SharedSecrets.getJavaOISAccess().checkArray(s, Object[].class, cap);
@@ -899,7 +750,7 @@ public class IdentityHashMap<K, V>
      * update modCount, etc.
      */
     private void putForCreate(K key, V value)
-            throws java.io.StreamCorruptedException {
+            throws StreamCorruptedException {
         Object k = maskNull(key);
         Object[] tab = table;
         int len = tab.length;
@@ -908,7 +759,7 @@ public class IdentityHashMap<K, V>
         Object item;
         while ((item = tab[i]) != null) {
             if (item == k)
-                throw new java.io.StreamCorruptedException();
+                throw new StreamCorruptedException();
             i = nextKeyIndex(i, len);
         }
         tab[i] = k;

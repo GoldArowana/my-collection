@@ -470,19 +470,9 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * 计算hash值
+     * 计算hash table实例的hash值
      */
     public synchronized int hashCode() {
-        /*
-         * This code detects the recursion caused by computing the hash code
-         * of a self-referential hash table and prevents the stack overflow
-         * that would otherwise result.  This allows certain 1.1-era
-         * applets with self-referential hash tables to work.  This code
-         * abuses the loadFactor field to do double-duty as a hashCode
-         * in progress flag, so as not to worsen the space performance.
-         * A negative load factor indicates that hash code computation is
-         * in progress.
-         */
         int h = 0;
         if (count == 0 || loadFactor < 0)
             return h;  // Returns zero
@@ -760,14 +750,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Save the state of the Hashtable to a stream (i.e., serialize it).
-     *
-     * @serialData The <i>capacity</i> of the Hashtable (the length of the
-     * bucket array) is emitted (int), followed by the
-     * <i>size</i> of the Hashtable (the number of key-value
-     * mappings), followed by the key (Object) and value (Object)
-     * for each key-value mapping represented by the Hashtable
-     * The key-value mappings are emitted in no particular order.
+     * 序列化
      */
     private void writeObject(ObjectOutputStream s)
             throws IOException {
@@ -802,7 +785,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Reconstitute the Hashtable from a stream (i.e., deserialize it).
+     * 反序列化
      */
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
@@ -857,6 +840,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
+     * 这个类被readObject方法所使用.
      * The put method used by readObject. This is provided because put
      * is overridable and should not be called in readObject since the
      * subclass will not yet be initialized.
@@ -889,7 +873,7 @@ public class Hashtable<K, V> extends Dictionary<K, V>
     }
 
     /**
-     * Hashtable bucket collision list entry
+     * Hashtable 的 entry类
      */
     private static class Entry<K, V> implements Map.Entry<K, V> {
         final int hash;
@@ -909,8 +893,6 @@ public class Hashtable<K, V> extends Dictionary<K, V>
             return new Entry<>(hash, key, value,
                     (next == null ? null : (Entry<K, V>) next.clone()));
         }
-
-        // Map.Entry Ops
 
         public K getKey() {
             return key;
@@ -1047,13 +1029,6 @@ public class Hashtable<K, V> extends Dictionary<K, V>
         }
     }
 
-    /**
-     * A hashtable enumerator class.  This class implements both the
-     * Enumeration and Iterator interfaces, but individual instances
-     * can be created with the Iterator methods disabled.  This is necessary
-     * to avoid unintentionally increasing the capabilities granted a user
-     * by passing an Enumeration.
-     */
     private class Enumerator<T> implements Enumeration<T>, Iterator<T> {
         /**
          * The modCount value that the iterator believes that the backing
