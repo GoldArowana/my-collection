@@ -7,32 +7,28 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
-public class WeakHashMap<K, V>
-        extends com.king.learn.collection.jdk8.AbstractMap<K, V>
-        implements Map<K, V> {
+public class WeakHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
 
     /**
-     * The default initial capacity -- MUST be a power of two.
+     * 默认大小, 必须是2的指数
      */
     private static final int DEFAULT_INITIAL_CAPACITY = 16;
 
     /**
-     * The maximum capacity, used if a higher value is implicitly specified
-     * by either of the constructors with arguments.
-     * MUST be a power of two <= 1<<30.
+     * 数组的最大限度
      */
     private static final int MAXIMUM_CAPACITY = 1 << 30;
 
     /**
-     * The load factor used when none specified in constructor.
+     * 默认负载因子
      */
     private static final float DEFAULT_LOAD_FACTOR = 0.75f;
     /**
-     * Value representing null keys inside tables.
+     * 用来代替key为null的情况
      */
     private static final Object NULL_KEY = new Object();
     /**
-     * The load factor for the hash table.
+     * map的负载因子
      */
     private final float loadFactor;
     /**
@@ -40,86 +36,67 @@ public class WeakHashMap<K, V>
      */
     private final ReferenceQueue<Object> queue = new ReferenceQueue<>();
     /**
-     * The table, resized as necessary. Length MUST Always be a power of two.
+     * hash桶数组
      */
     Entry<K, V>[] table;
     /**
-     * The number of times this WeakHashMap has been structurally modified.
-     * Structural modifications are those that change the number of
-     * mappings in the map or otherwise modify its internal structure
-     * (e.g., rehash).  This field is used to make iterators on
-     * Collection-views of the map fail-fast.
-     *
-     * @see ConcurrentModificationException
+     * 结构被修改的次数
      */
     int modCount;
     /**
-     * The number of key-value mappings contained in this weak hash map.
+     * k-v的个数
      */
     private int size;
     /**
-     * The next size value at which to resize (capacity * load factor).
+     * 到了这个值就resize. 这个值为(capacity * load factor).
      */
     private int threshold;
+
+    /**
+     * k-v集合
+     */
     private transient Set<Map.Entry<K, V>> entrySet;
 
     /**
-     * Constructs a new, empty <tt>WeakHashMap</tt> with the given initial
-     * capacity and the given load factor.
-     *
-     * @param initialCapacity The initial capacity of the <tt>WeakHashMap</tt>
-     * @param loadFactor      The load factor of the <tt>WeakHashMap</tt>
-     * @throws IllegalArgumentException if the initial capacity is negative,
-     *                                  or if the load factor is nonpositive.
+     * 根据给定的初始大小和负载因子进行构造
      */
     public WeakHashMap(int initialCapacity, float loadFactor) {
         if (initialCapacity < 0)
             throw new IllegalArgumentException("Illegal Initial Capacity: " +
                     initialCapacity);
+
         if (initialCapacity > MAXIMUM_CAPACITY)
             initialCapacity = MAXIMUM_CAPACITY;
 
         if (loadFactor <= 0 || Float.isNaN(loadFactor))
             throw new IllegalArgumentException("Illegal Load factor: " +
                     loadFactor);
+
         int capacity = 1;
         while (capacity < initialCapacity)
             capacity <<= 1;
+
         table = newTable(capacity);
         this.loadFactor = loadFactor;
         threshold = (int) (capacity * loadFactor);
     }
 
     /**
-     * Constructs a new, empty <tt>WeakHashMap</tt> with the given initial
-     * capacity and the default load factor (0.75).
-     *
-     * @param initialCapacity The initial capacity of the <tt>WeakHashMap</tt>
-     * @throws IllegalArgumentException if the initial capacity is negative
+     * 根据给定的初始大小和默认的负载因子0.75进行构造
      */
     public WeakHashMap(int initialCapacity) {
         this(initialCapacity, DEFAULT_LOAD_FACTOR);
     }
 
     /**
-     * Constructs a new, empty <tt>WeakHashMap</tt> with the default initial
-     * capacity (16) and load factor (0.75).
+     * 根据默认的初始大小16, 和默认的负载因子0.75 进行构造.
      */
     public WeakHashMap() {
         this(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR);
     }
 
-    // internal utilities
-
     /**
-     * Constructs a new <tt>WeakHashMap</tt> with the same mappings as the
-     * specified map.  The <tt>WeakHashMap</tt> is created with the default
-     * load factor (0.75) and an initial capacity sufficient to hold the
-     * mappings in the specified map.
-     *
-     * @param m the map whose mappings are to be placed in this map
-     * @throws NullPointerException if the specified map is null
-     * @since 1.3
+     * 先初始化一个适当的大小, 然后把m里的所有元素都插入进去
      */
     public WeakHashMap(Map<? extends K, ? extends V> m) {
         this(Math.max((int) (m.size() / DEFAULT_LOAD_FACTOR) + 1,
@@ -129,59 +106,51 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Use NULL_KEY for key if it is null.
+     * 用于处理key为null的情况
      */
     private static Object maskNull(Object key) {
         return (key == null) ? NULL_KEY : key;
     }
 
     /**
-     * Returns internal representation of null key back to caller as null.
+     * maskNull的逆运算
      */
     static Object unmaskNull(Object key) {
         return (key == NULL_KEY) ? null : key;
     }
 
     /**
-     * Checks for equality of non-null reference x and possibly-null y.  By
-     * default uses Object.equals.
+     * 判断两个而对象是否相等
      */
     private static boolean eq(Object x, Object y) {
         return x == y || x.equals(y);
     }
 
     /**
-     * Returns index for hash code h.
+     * 计算在map中的下角标(索引)
      */
     private static int indexFor(int h, int length) {
         return h & (length - 1);
     }
 
+    /**
+     * 新的table数组
+     */
     @SuppressWarnings("unchecked")
     private Entry<K, V>[] newTable(int n) {
         return (Entry<K, V>[]) new Entry<?, ?>[n];
     }
 
     /**
-     * Retrieve object hash code and applies a supplemental hash function to the
-     * result hash, which defends against poor quality hash functions.  This is
-     * critical because HashMap uses power-of-two length hash tables, that
-     * otherwise encounter collisions for hashCodes that do not differ
-     * in lower bits.
+     * 计算hash
      */
     final int hash(Object k) {
         int h = k.hashCode();
-
-        // This function ensures that hashCodes that differ only by
-        // constant multiples at each bit position have a bounded
-        // number of collisions (approximately 8 at default load factor).
         h ^= (h >>> 20) ^ (h >>> 12);
         return h ^ (h >>> 7) ^ (h >>> 4);
     }
 
-    /**
-     * Expunges stale entries from the table.
-     */
+    // 清空table中无用键值对。
     private void expungeStaleEntries() {
         for (Object x; (x = queue.poll()) != null; ) {
             synchronized (queue) {
@@ -191,15 +160,20 @@ public class WeakHashMap<K, V>
 
                 Entry<K, V> prev = table[i];
                 Entry<K, V> p = prev;
+                // 遍历数组指定位置的单链表
                 while (p != null) {
                     Entry<K, V> next = p.next;
                     if (p == e) {
+                        // 判断 p 是不是单链表的首节点
                         if (prev == e)
+                            // 删除节点 -> 修改首节点为其后继节点（数组中存放的是单链表的首节点）
                             table[i] = next;
                         else
+                            // 删除节点 -> 修改其前继节点的后指针
                             prev.next = next;
                         // Must not null out e.next;
                         // stale entries may be in use by a HashIterator
+                        // 把value 赋值为 null，来帮助 GC 回收强引用的 value
                         e.value = null; // Help GC
                         size--;
                         break;
@@ -212,7 +186,8 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Returns the table after first expunging stale entries.
+     * 先调用expungeStaleEntries, 消除无用节点
+     * 然后返回table数组
      */
     private Entry<K, V>[] getTable() {
         expungeStaleEntries();
@@ -220,10 +195,7 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Returns the number of key-value mappings in this map.
-     * This result is a snapshot, and may not reflect unprocessed
-     * entries that will be removed before next attempted access
-     * because they are no longer referenced.
+     * 返回当前map在消除无用节点后的大小
      */
     public int size() {
         if (size == 0)
@@ -233,31 +205,14 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Returns <tt>true</tt> if this map contains no key-value mappings.
-     * This result is a snapshot, and may not reflect unprocessed
-     * entries that will be removed before next attempted access
-     * because they are no longer referenced.
+     * 判断当前map是否为清空状态
      */
     public boolean isEmpty() {
         return size() == 0;
     }
 
     /**
-     * Returns the value to which the specified key is mapped,
-     * or {@code null} if this map contains no mapping for the key.
-     *
-     * <p>More formally, if this map contains a mapping from a key
-     * {@code k} to a value {@code v} such that {@code (key==null ? k==null :
-     * key.equals(k))}, then this method returns {@code v}; otherwise
-     * it returns {@code null}.  (There can be at most one such mapping.)
-     *
-     * <p>A return value of {@code null} does not <i>necessarily</i>
-     * indicate that the map contains no mapping for the key; it's also
-     * possible that the map explicitly maps the key to {@code null}.
-     * The {@link #containsKey containsKey} operation may be used to
-     * distinguish these two cases.
-     *
-     * @see #put(Object, Object)
+     * 根据key获取value
      */
     public V get(Object key) {
         Object k = maskNull(key);
@@ -274,20 +229,14 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Returns <tt>true</tt> if this map contains a mapping for the
-     * specified key.
-     *
-     * @param key The key whose presence in this map is to be tested
-     * @return <tt>true</tt> if there is a mapping for <tt>key</tt>;
-     * <tt>false</tt> otherwise
+     * 判断当前map中是否包含这个key
      */
     public boolean containsKey(Object key) {
         return getEntry(key) != null;
     }
 
     /**
-     * Returns the entry associated with the specified key in this map.
-     * Returns null if the map contains no mapping for this key.
+     * 根据key获取k-v实例
      */
     Entry<K, V> getEntry(Object key) {
         Object k = maskNull(key);
@@ -301,16 +250,7 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Associates the specified value with the specified key in this map.
-     * If the map previously contained a mapping for this key, the old
-     * value is replaced.
-     *
-     * @param key   key with which the specified value is to be associated.
-     * @param value value to be associated with the specified key.
-     * @return the previous value associated with <tt>key</tt>, or
-     * <tt>null</tt> if there was no mapping for <tt>key</tt>.
-     * (A <tt>null</tt> return can also indicate that the map
-     * previously associated <tt>null</tt> with <tt>key</tt>.)
+     * 插入key-value
      */
     public V put(K key, V value) {
         Object k = maskNull(key);
@@ -336,18 +276,7 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Rehashes the contents of this map into a new array with a
-     * larger capacity.  This method is called automatically when the
-     * number of keys in this map reaches its threshold.
-     * <p>
-     * If current capacity is MAXIMUM_CAPACITY, this method does not
-     * resize the map, but sets threshold to Integer.MAX_VALUE.
-     * This has the effect of preventing future calls.
-     *
-     * @param newCapacity the new capacity, MUST be a power of two;
-     *                    must be greater than current capacity unless current
-     *                    capacity is MAXIMUM_CAPACITY (in which case value
-     *                    is irrelevant).
+     * 扩容
      */
     void resize(int newCapacity) {
         Entry<K, V>[] oldTable = getTable();
@@ -376,7 +305,7 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Transfers all entries from src to dest tables
+     * 把src数组中的元素都转移到dest数组中
      */
     private void transfer(Entry<K, V>[] src, Entry<K, V>[] dest) {
         for (int j = 0; j < src.length; ++j) {
@@ -400,27 +329,13 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Copies all of the mappings from the specified map to this map.
-     * These mappings will replace any mappings that this map had for any
-     * of the keys currently in the specified map.
-     *
-     * @param m mappings to be stored in this map.
-     * @throws NullPointerException if the specified map is null.
+     * 把参数m中的所有元素都中
      */
     public void putAll(Map<? extends K, ? extends V> m) {
         int numKeysToBeAdded = m.size();
         if (numKeysToBeAdded == 0)
             return;
 
-        /*
-         * Expand the map if the map if the number of mappings to be added
-         * is greater than or equal to threshold.  This is conservative; the
-         * obvious condition is (m.size() + size) >= threshold, but this
-         * condition could result in a map with twice the appropriate capacity,
-         * if the keys to be added overlap with the keys already in this map.
-         * By using the conservative calculation, we subject ourself
-         * to at most one extra resize.
-         */
         if (numKeysToBeAdded > threshold) {
             int targetCapacity = (int) (numKeysToBeAdded / loadFactor + 1);
             if (targetCapacity > MAXIMUM_CAPACITY)
@@ -436,25 +351,9 @@ public class WeakHashMap<K, V>
             put(e.getKey(), e.getValue());
     }
 
+
     /**
-     * Removes the mapping for a key from this weak hash map if it is present.
-     * More formally, if this map contains a mapping from key <tt>k</tt> to
-     * value <tt>v</tt> such that <code>(key==null ?  k==null :
-     * key.equals(k))</code>, that mapping is removed.  (The map can contain
-     * at most one such mapping.)
-     *
-     * <p>Returns the value to which this map previously associated the key,
-     * or <tt>null</tt> if the map contained no mapping for the key.  A
-     * return value of <tt>null</tt> does not <i>necessarily</i> indicate
-     * that the map contained no mapping for the key; it's also possible
-     * that the map explicitly mapped the key to <tt>null</tt>.
-     *
-     * <p>The map will not contain a mapping for the specified key once the
-     * call returns.
-     *
-     * @param key key whose mapping is to be removed from the map
-     * @return the previous value associated with <tt>key</tt>, or
-     * <tt>null</tt> if there was no mapping for <tt>key</tt>
+     * 根据key进行删除
      */
     public V remove(Object key) {
         Object k = maskNull(key);
@@ -678,8 +577,7 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * The entries in this hash table extend WeakReference, using its main ref
-     * field as the key.
+     * map的 entry定义类
      */
     private static class Entry<K, V> extends WeakReference<Object> implements Map.Entry<K, V> {
         final int hash;
@@ -740,8 +638,7 @@ public class WeakHashMap<K, V>
     }
 
     /**
-     * Similar form as other hash Spliterators, but skips dead
-     * elements.
+     * 分片迭代器
      */
     static class WeakHashMapSpliterator<K, V> {
         final WeakHashMap<K, V> map;
@@ -778,6 +675,9 @@ public class WeakHashMap<K, V>
         }
     }
 
+    /**
+     * key的分片迭代器
+     */
     static final class KeySpliterator<K, V>
             extends WeakHashMapSpliterator<K, V>
             implements Spliterator<K> {
@@ -857,6 +757,9 @@ public class WeakHashMap<K, V>
         }
     }
 
+    /**
+     * value的分片迭代器
+     */
     static final class ValueSpliterator<K, V>
             extends WeakHashMapSpliterator<K, V>
             implements Spliterator<V> {
@@ -933,6 +836,9 @@ public class WeakHashMap<K, V>
         }
     }
 
+    /**
+     * k-v的分片迭代器
+     */
     static final class EntrySpliterator<K, V>
             extends WeakHashMapSpliterator<K, V>
             implements Spliterator<Map.Entry<K, V>> {
@@ -1017,6 +923,9 @@ public class WeakHashMap<K, V>
         }
     }
 
+    /**
+     * 迭代器的抽象定义
+     */
     private abstract class HashIterator<T> implements Iterator<T> {
         private int index;
         private Entry<K, V> entry;
@@ -1108,6 +1017,9 @@ public class WeakHashMap<K, V>
         }
     }
 
+    /**
+     * key集合类
+     */
     private class KeySet extends AbstractSet<K> {
         public Iterator<K> iterator() {
             return new KeyIterator();
@@ -1138,6 +1050,9 @@ public class WeakHashMap<K, V>
         }
     }
 
+    /**
+     * value集合类
+     */
     private class Values extends AbstractCollection<V> {
         public Iterator<V> iterator() {
             return new ValueIterator();
@@ -1160,6 +1075,9 @@ public class WeakHashMap<K, V>
         }
     }
 
+    /**
+     * k-v集合类
+     */
     private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         public Iterator<Map.Entry<K, V>> iterator() {
             return new EntryIterator();
