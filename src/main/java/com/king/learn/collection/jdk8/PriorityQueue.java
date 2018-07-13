@@ -1,28 +1,3 @@
-/*
- * Copyright (c) 2003, 2017, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
 package com.king.learn.collection.jdk8;
 
 import sun.misc.SharedSecrets;
