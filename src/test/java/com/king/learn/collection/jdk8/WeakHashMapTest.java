@@ -28,7 +28,60 @@ public class WeakHashMapTest {
     @Test
     public void weakHashMapTest() throws InterruptedException {
         WeakHashMap<Object, String> wmap = new WeakHashMap<>();
+        Object a = new Object();
+        wmap.put(a, "a");
+        System.gc();
+        Thread.sleep(100);
+        System.out.println(wmap.size());
+        // 输出结果：1
+    }
+
+    @Test
+    public void weakHashMapTestt() throws InterruptedException {
+        WeakHashMap<Object, String> wmap = new WeakHashMap<>();
+        Object a = new Object();
+        wmap.put(a, "a");
+        System.gc();
+        Thread.sleep(100);
+        System.out.println(wmap.size());
+        // 输出结果：0
+    }
+
+    @Test
+    public void weakHashMapTest2() throws InterruptedException {
+        WeakHashMap<Object, String> wmap = new WeakHashMap<>();
         wmap.put(new Object(), "a");
+        System.gc();
+        Thread.sleep(100);
+        System.out.println(wmap.size());
+        // 输出结果：0
+    }
+
+    @Test
+    public void weakHashMapTest3() throws InterruptedException {
+        WeakHashMap<Object, Object> wmap = new WeakHashMap<>();
+        Object a = new Object();
+        wmap.put(new Object(), a);
+        System.gc();
+        Thread.sleep(100);
+        System.out.println(wmap.size());
+        // 输出结果：0
+    }
+
+    @Test
+    public void weakHashMapTest4() throws InterruptedException {
+        WeakHashMap<Object, String> wmap = new WeakHashMap<>();
+        wmap.put(null, "a");
+        System.gc();
+        Thread.sleep(100);
+        System.out.println(wmap.size());
+        // 输出结果：1
+    }
+
+    @Test
+    public void weakHashMapTest5() throws InterruptedException {
+        WeakHashMap<Object, String> wmap = new WeakHashMap<>();
+        wmap.put(new Object(), null);
         System.gc();
         Thread.sleep(100);
         System.out.println(wmap.size());

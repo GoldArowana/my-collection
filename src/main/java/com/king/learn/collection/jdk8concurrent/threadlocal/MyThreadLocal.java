@@ -11,33 +11,24 @@ import java.util.function.Supplier;
  */
 public class MyThreadLocal<T> {
 
+    /**
+     * 增量
+     */
     private static final int HASH_INCREMENT = 0x61c88647;
     /**
-     * The next hash code to be given out. Updated atomically. Starts at zero.
+     * 下一个hash值. (从零开始, 自动增长, 涨幅是0x61c88647)
      */
     private static AtomicInteger nextHashCode = new AtomicInteger();
     /**
-     * ThreadLocals rely on per-thread linear-probe hash maps attached
-     * to each thread (Thread.threadLocals and
-     * inheritableThreadLocals).  The MyThreadLocal objects act as keys,
-     * searched via threadLocalHashCode.  This is a custom hash code
-     * (useful only within ThreadLocalMaps) that eliminates collisions
-     * in the common case where consecutively constructed ThreadLocals
-     * are used by the same threads, while remaining well-behaved in
-     * less common cases.
+     * 开放地址法, 线性探测
      */
     private final int threadLocalHashCode = nextHashCode();
 
-    /**
-     * Creates a thread local variable.
-     *
-     * @see #withInitial(Supplier)
-     */
     public MyThreadLocal() {
     }
 
     /**
-     * Returns the next hash code.
+     * cas加增量, 作为下一个哈希值
      */
     private static int nextHashCode() {
         return nextHashCode.getAndAdd(HASH_INCREMENT);
@@ -52,51 +43,31 @@ public class MyThreadLocal<T> {
      * @return a new thread local variable
      * @throws NullPointerException if the specified supplier is null
      * @since 1.8
+     * <p>
+     * TODO
      */
     public static <S> MyThreadLocal<S> withInitial(Supplier<? extends S> supplier) {
         return new SuppliedThreadLocal<>(supplier);
     }
 
     /**
-     * Factory method to create map of inherited thread locals.
-     * Designed to be called only from Thread constructor.
-     *
-     * @param parentMap the map associated with parent thread
-     * @return a map containing the parent's inheritable bindings
+     * 创建一个继承了parentMap的一个ThreadLocalMap, 并返回
      */
     static ThreadLocalMap createInheritedMap(ThreadLocalMap parentMap) {
         return new ThreadLocalMap(parentMap);
     }
 
     /**
-     * Returns the current thread's "initial value" for this
-     * thread-local variable.  This method will be invoked the first
-     * time a thread accesses the variable with the {@link #get}
-     * method, unless the thread previously invoked the {@link #set}
-     * method, in which case the {@code initialValue} method will not
-     * be invoked for the thread.  Normally, this method is invoked at
-     * most once per thread, but it may be invoked again in case of
-     * subsequent invocations of {@link #remove} followed by {@link #get}.
-     *
-     * <p>This implementation simply returns {@code null}; if the
-     * programmer desires thread-local variables to have an initial
-     * value other than {@code null}, {@code MyThreadLocal} must be
-     * subclassed, and this method overridden.  Typically, an
-     * anonymous inner class will be used.
-     *
-     * @return the initial value for this thread-local
+     * 初始值
      */
     protected T initialValue() {
         return null;
     }
 
     /**
-     * Returns the value in the current thread's copy of this
-     * thread-local variable.  If the variable has no value for the
-     * current thread, it is first initialized to the value returned
-     * by an invocation of the {@link #initialValue} method.
-     *
-     * @return the current thread's value of this thread-local
+     * 尝试获取Thread中的ThreadLocalMap
+     * 如果不为null, 那么就获取
+     * 如果为null, 那么就创建, 然后插入默认值, 然后再返回这个默认值.
      */
     public T get() {
         Thread t = Thread.currentThread();
@@ -113,10 +84,7 @@ public class MyThreadLocal<T> {
     }
 
     /**
-     * Variant of set() to establish initialValue. Used instead
-     * of set() in case user has overridden the set() method.
-     *
-     * @return the initial value
+     * 为当前线程的当前ThreadLocal实例设置默认值
      */
     private T setInitialValue() {
         T value = initialValue();
@@ -130,13 +98,7 @@ public class MyThreadLocal<T> {
     }
 
     /**
-     * Sets the current thread's copy of this thread-local variable
-     * to the specified value.  Most subclasses will have no need to
-     * override this method, relying solely on the {@link #initialValue}
-     * method to set the values of thread-locals.
-     *
-     * @param value the value to be stored in the current thread's copy of
-     *              this thread-local.
+     * 设置value
      */
     public void set(T value) {
         Thread t = Thread.currentThread();
@@ -148,15 +110,7 @@ public class MyThreadLocal<T> {
     }
 
     /**
-     * Removes the current thread's value for this thread-local
-     * variable.  If this thread-local variable is subsequently
-     * {@linkplain #get read} by the current thread, its value will be
-     * reinitialized by invoking its {@link #initialValue} method,
-     * unless its value is {@linkplain #set set} by the current thread
-     * in the interim.  This may result in multiple invocations of the
-     * {@code initialValue} method in the current thread.
-     *
-     * @since 1.5
+     * 移除当前Thread的当前ThreadLocal实例
      */
     public void remove() {
         ThreadLocalMap m = getMap(Thread.currentThread());
@@ -165,18 +119,15 @@ public class MyThreadLocal<T> {
     }
 
     /**
-     * Get the map associated with a MyThreadLocal. Overridden in
-     * InheritableThreadLocal.
-     *
-     * @param t the current thread
-     * @return the map
+     * 获取线程t的ThreadLocalMap
      */
     ThreadLocalMap getMap(Thread t) {
         return getThreadLocalsField(t);
     }
 
     /**
-     * 自己写的反射
+     * 自己写的反射, 防止编译报错. 代码直接粘过来会编译报错.
+     * 用于被上面的getMap调用, 作用就是返回Thread里的threadLocals字段
      */
     public ThreadLocalMap getThreadLocalsField(Thread t) {
         try {
@@ -189,7 +140,15 @@ public class MyThreadLocal<T> {
     }
 
     /**
-     * 自己写的反射
+     * 给线程t创建ThreadLocalMap, firstValue作为值
+     */
+    void createMap(Thread t, T firstValue) {
+        setThreadLocalsField(t, new ThreadLocalMap(this, firstValue));
+    }
+
+    /**
+     * 自己写的反射, 把原来的代码等价替换为了反射.不然会编译报错.
+     * 作用就是把new ThreadLocalMap 赋值到threadLocals字段上.
      */
     public void setThreadLocalsField(Thread t, ThreadLocalMap map) {
         try {
@@ -202,23 +161,14 @@ public class MyThreadLocal<T> {
     }
 
     /**
-     * Create the map associated with a MyThreadLocal. Overridden in
-     * InheritableThreadLocal.
-     *
-     * @param t          the current thread
-     * @param firstValue value for the initial entry of the map
-     */
-    void createMap(Thread t, T firstValue) {
-        setThreadLocalsField(t, new ThreadLocalMap(this, firstValue));
-    }
-
-    /**
      * Method childValue is visibly defined in subclass
      * InheritableThreadLocal, but is internally defined here for the
      * sake of providing createInheritedMap factory method without
      * needing to subclass the map class in InheritableThreadLocal.
      * This technique is preferable to the alternative of embedding
      * instanceof tests in methods.
+     * <p>
+     * TODO
      */
     T childValue(T parentValue) {
         throw new UnsupportedOperationException();
@@ -227,6 +177,7 @@ public class MyThreadLocal<T> {
     /**
      * An extension of MyThreadLocal that obtains its initial value from
      * the specified {@code Supplier}.
+     * TODO
      */
     static final class SuppliedThreadLocal<T> extends MyThreadLocal<T> {
 
@@ -255,27 +206,25 @@ public class MyThreadLocal<T> {
     static class ThreadLocalMap {
 
         /**
-         * The initial capacity -- MUST be a power of two.
+         * 初始大小, 必须是2的指数
          */
         private static final int INITIAL_CAPACITY = 16;
         /**
-         * The table, resized as necessary.
-         * table.length MUST always be a power of two.
+         * 哈希桶数组, 必要时扩容.
+         * table.length必须是2的指数
          */
         private Entry[] table;
         /**
-         * The number of entries in the table.
+         * table里的k-v个数
          */
         private int size = 0;
         /**
-         * The next size value at which to resize.
+         * k-v个数到了这个数量, 就扩容
          */
         private int threshold; // Default to 0
 
         /**
-         * Construct a new map initially containing (firstKey, firstValue).
-         * ThreadLocalMaps are constructed lazily, so we only create
-         * one when we have at least one entry to put in it.
+         * ThreadLocalMap是懒构造, 所以我们在确实有元素要插入时才进行构造.
          */
         ThreadLocalMap(MyThreadLocal<?> firstKey, Object firstValue) {
             table = new Entry[INITIAL_CAPACITY];
@@ -286,14 +235,13 @@ public class MyThreadLocal<T> {
         }
 
         /**
-         * Construct a new map including all Inheritable ThreadLocals
-         * from given parent map. Called only by createInheritedMap.
-         *
-         * @param parentMap the map associated with parent thread.
+         * 构造一个ThreadLocalMap, 继承了parentMap里的所有内容
+         * TODO
          */
         private ThreadLocalMap(ThreadLocalMap parentMap) {
             Entry[] parentTable = parentMap.table;
             int len = parentTable.length;
+            // threshold和table.length 一样大
             setThreshold(len);
             table = new Entry[len];
 
@@ -337,14 +285,7 @@ public class MyThreadLocal<T> {
         }
 
         /**
-         * Get the entry associated with key.  This method
-         * itself handles only the fast path: a direct hit of existing
-         * key. It otherwise relays to getEntryAfterMiss.  This is
-         * designed to maximize performance for direct hits, in part
-         * by making this method readily inlinable.
-         *
-         * @param key the thread local object
-         * @return the entry associated with key, or null if no such
+         * 根据key, 获取Entry(value)
          */
         private Entry getEntry(MyThreadLocal<?> key) {
             int i = key.threadLocalHashCode & (table.length - 1);

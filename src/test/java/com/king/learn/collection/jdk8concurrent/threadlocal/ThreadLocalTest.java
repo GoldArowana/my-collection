@@ -2,8 +2,6 @@ package com.king.learn.collection.jdk8concurrent.threadlocal;
 
 import org.junit.Test;
 
-import java.lang.reflect.Field;
-
 public class ThreadLocalTest {
 
     private final static ThreadLocal<String> RESOURCE_1 = new ThreadLocal<String>();
@@ -50,54 +48,6 @@ public class ThreadLocalTest {
 
     @Test
     public void t() throws Exception {
-        class A {
-            int a;
-            int b;
-
-            public A(int a, int b) {
-                this.a = a;
-                this.b = b;
-            }
-
-            @Override
-            public int hashCode() {
-                return Integer.hashCode(a);
-            }
-
-            @Override
-            public boolean equals(Object obj) {
-                if (obj instanceof A
-                        && ((A) obj).a == this.a
-                        && ((A) obj).b == this.b) {
-                    return true;
-                }
-                return false;
-            }
-        }
-        ThreadLocal<A> threadLocal = new ThreadLocal();
-        threadLocal.set(new A(1, 111));
-        Field f = ThreadLocal.class.getDeclaredField("HASH_INCREMENT");
-        f.setAccessible(true);
-        int inc = (int) f.get(null);
-        System.out.println(Integer.toHexString(inc));
-
-        new Thread(() -> {
-            threadLocal.set(new A(1, 112));
-            Field f2 = null;
-            try {
-                f2 = ThreadLocal.class.getDeclaredField("HASH_INCREMENT");
-            } catch (NoSuchFieldException e) {
-                e.printStackTrace();
-            }
-            f2.setAccessible(true);
-            int inc2 = 0;
-            try {
-                inc2 = (int) f2.get(null);
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-            System.out.println(Integer.toHexString(inc2));
-        }).start();
 
     }
 }
