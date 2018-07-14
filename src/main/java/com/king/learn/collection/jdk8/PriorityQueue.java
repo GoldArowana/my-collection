@@ -397,22 +397,21 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
     }
 
     /**
-     * Returns an iterator over the elements in this queue. The iterator
-     * does not return the elements in any particular order.
-     *
-     * @return an iterator over the elements in this queue
+     * @return 返回迭代器
      */
     public Iterator<E> iterator() {
         return new Itr();
     }
 
+    /**
+     * @return 优先队列里的元素个数
+     */
     public int size() {
         return size;
     }
 
     /**
-     * Removes all of the elements from this priority queue.
-     * The queue will be empty after this call returns.
+     * 清空优先队列
      */
     public void clear() {
         modCount++;
@@ -421,6 +420,11 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
         size = 0;
     }
 
+    /**
+     * 获取优先队列第一个元素
+     *
+     * @return
+     */
     @SuppressWarnings("unchecked")
     public E poll() {
         if (size == 0)
@@ -436,16 +440,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
     }
 
     /**
-     * Removes the ith element from queue.
-     * <p>
-     * Normally this method leaves the elements at up to i-1,
-     * inclusive, untouched.  Under these circumstances, it returns
-     * null.  Occasionally, in order to maintain the heap invariant,
-     * it must swap a later element of the list with one earlier than
-     * i.  Under these circumstances, this method returns the element
-     * that was previously at the end of the list and is now at some
-     * position before i. This fact is used by iterator.remove so as to
-     * avoid missing traversing elements.
+     * 删除优先队列里第i个元素
      */
     @SuppressWarnings("unchecked")
     private E removeAt(int i) {
@@ -486,6 +481,9 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
             siftUpComparable(k, x);
     }
 
+    /**
+     * compareTo
+     */
     @SuppressWarnings("unchecked")
     private void siftUpComparable(int k, E x) {
         Comparable<? super E> key = (Comparable<? super E>) x;
@@ -500,6 +498,9 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
         queue[k] = key;
     }
 
+    /**
+     * comparator
+     */
     @SuppressWarnings("unchecked")
     private void siftUpUsingComparator(int k, E x) {
         while (k > 0) {
@@ -547,6 +548,9 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
         queue[k] = key;
     }
 
+    /**
+     * 向下调整, 使用comparator
+     */
     @SuppressWarnings("unchecked")
     private void siftDownUsingComparator(int k, E x) {
         int half = size >>> 1;
@@ -566,8 +570,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
     }
 
     /**
-     * Establishes the heap invariant (described above) in the entire tree,
-     * assuming nothing about the order of the elements prior to the call.
+     * 堆调整
      */
     @SuppressWarnings("unchecked")
     private void heapify() {
@@ -576,25 +579,14 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
     }
 
     /**
-     * Returns the comparator used to order the elements in this
-     * queue, or {@code null} if this queue is sorted according to
-     * the {@linkplain Comparable natural ordering} of its elements.
-     *
-     * @return the comparator used to order this queue, or
-     * {@code null} if this queue is sorted according to the
-     * natural ordering of its elements
+     * @return 返回comparator
      */
     public Comparator<? super E> comparator() {
         return comparator;
     }
 
     /**
-     * Saves this queue to a stream (that is, serializes it).
-     *
-     * @param s the stream
-     * @serialData The length of the array backing the instance is
-     * emitted (int), followed by all of its elements
-     * (each an {@code Object}) in the proper order.
+     * 序列化
      */
     private void writeObject(ObjectOutputStream s)
             throws IOException {
@@ -610,10 +602,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
     }
 
     /**
-     * Reconstitutes the {@code PriorityQueue} instance from a stream
-     * (that is, deserializes it).
-     *
-     * @param s the stream
+     * 反序列化
      */
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
@@ -635,23 +624,13 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
         heapify();
     }
 
-    /**
-     * Creates a <em><a href="Spliterator.html#binding">late-binding</a></em>
-     * and <em>fail-fast</em> {@link Spliterator} over the elements in this
-     * queue.
-     *
-     * <p>The {@code Spliterator} reports {@link Spliterator#SIZED},
-     * {@link Spliterator#SUBSIZED}, and {@link Spliterator#NONNULL}.
-     * Overriding implementations should document the reporting of additional
-     * characteristic values.
-     *
-     * @return a {@code Spliterator} over the elements in this queue
-     * @since 1.8
-     */
     public final Spliterator<E> spliterator() {
         return new PriorityQueueSpliterator<E>(this, 0, -1, 0);
     }
 
+    /**
+     * 分片迭代器
+     */
     static final class PriorityQueueSpliterator<E> implements Spliterator<E> {
         /*
          * This is very similar to ArrayList Spliterator, except for
@@ -744,6 +723,10 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
         }
     }
 
+    /**
+     * 迭代器
+     * TODO
+     */
     private final class Itr implements Iterator<E> {
         /**
          * Index (into queue array) of element to be returned by
