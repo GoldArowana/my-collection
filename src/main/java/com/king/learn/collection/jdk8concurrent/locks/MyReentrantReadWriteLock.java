@@ -382,16 +382,17 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
              */
             // 获取当前线程的引用
             Thread current = Thread.currentThread();
+            // 获取锁的状态. c 的低 16 位值，代表写锁的状态. 高16位代表读锁的状态
             int c = getState();
 
-            // exclusiveCount(c) 不等于 0，说明有线程持有写锁
+            // exclusiveCount(c) 是写锁的state. 不等于 0，说明有线程持有写锁
             if (exclusiveCount(c) != 0 &&
                     //    而且不是当前线程持有写锁
                     getExclusiveOwnerThread() != current)
                 // 那么当前线程获取读锁失败
                 return -1;
 
-            // 读锁的获取次数
+            // 读锁的state
             int r = sharedCount(c);
 
             // 读锁获取是否需要被阻塞
@@ -802,6 +803,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
          * purposes and lies dormant until the read lock has been acquired.
          */
         public void lock() {
+            // 获取共享锁
             sync.acquireShared(1);
         }
 

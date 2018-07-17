@@ -180,6 +180,9 @@ public class MyReentrantLock implements MyLock {
                 "[Locked by thread " + o.getName() + "]");
     }
 
+    /**
+     * 抽象类, 公平锁和非公平锁都继承自这里
+     */
     abstract static class Sync extends MyAbstractQueuedSynchronizer {
 
         abstract void lock();
@@ -195,6 +198,8 @@ public class MyReentrantLock implements MyLock {
             int c = getState();
             // 如果是0, 表示此时此刻锁还被被任何一个线程所占用
             if (c == 0) {
+                // 当c==0的时候, 公平锁锁是先判断队列里是否有其他线程在等待, 如果没有, 再去cas争抢.
+                // 而非公平锁这里, 就是根本就不去理会等待队列, 自己抓到机会就赶紧抢
                 // cas来争抢, 让重入次数变1.
                 // 用cas是因为这个地方会发生并发.
                 // 多个抢占当然只有一个成功了
@@ -319,8 +324,9 @@ public class MyReentrantLock implements MyLock {
         }
 
         /**
-         * 尝试直接获取锁. true: 获取到锁, false: 未获取到锁
-         * 返回true：1.没有线程在等待锁；2.重入锁，线程本来就持有锁，也就可以理所当然可以直接获取
+         * @return 返回true: 获取到锁; 返回false: 未获取到锁
+         * 什么时候返回true呢?  1.没有线程在等待锁；2.重入锁，线程本来就持有锁，也就可以理所当然可以直接获取
+         * @implNote 尝试直接获取锁.
          */
         protected final boolean tryAcquire(int acquires) {
             // 获取当前线程的引用

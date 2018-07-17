@@ -18,6 +18,12 @@ public class ReentrantLockTest {
         }
     }
 
+    public static void main(String[] args) {
+        MyReentrantLock lock = new MyReentrantLock(true); //ReentrantLock lock = new ReentrantLock();
+        new Thread(lock::lock).start();
+        new Thread(lock::lock).start();
+    }
+
     @Test
     public void withLock() {
         for (int i = 0; i < RANK; i++) {

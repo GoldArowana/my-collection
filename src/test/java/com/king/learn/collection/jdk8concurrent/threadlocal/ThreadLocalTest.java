@@ -48,6 +48,26 @@ public class ThreadLocalTest {
 
     @Test
     public void t() throws Exception {
+        ThreadLocal<StringBuilder> threadLocal = new ThreadLocal();
+        StringBuilder sb = new StringBuilder();
+        threadLocal.set(sb);
 
+        new Thread(() -> {
+            threadLocal.set(sb);
+
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+            System.out.println(threadLocal.get());
+
+        }).start();
+
+        threadLocal.get().append("ggg");
+        Thread.sleep(5000);
     }
+
+
 }

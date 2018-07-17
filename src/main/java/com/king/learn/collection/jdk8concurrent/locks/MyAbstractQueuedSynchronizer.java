@@ -212,7 +212,7 @@ public abstract class MyAbstractQueuedSynchronizer {
     }
 
     /**
-     * 将当前节点封装为Node, 然后根据所给的模式, 进行入队操作
+     * 将当前线程封装为Node, 然后根据所给的模式, 进行入队操作
      *
      * @param mode 有两种模式 Node.EXCLUSIVE 独占模式, Node.SHARED 共享模式
      * @return 返回新节点, 这个新节点封装了当前线程.
@@ -222,7 +222,7 @@ public abstract class MyAbstractQueuedSynchronizer {
         // Try the fast path of enq; backup to full enq on failure
         // 以下几行代码想把当前node加到链表的最后面去，也就是进到阻塞队列的最后
         Node pred = tail;
-        // 如果tail不是空, 说明有头结点.说明这个队列被初始化了.
+        // 如果tail不是空, 说明有头结点.说明这个队列已经被初始化了.
         // 因为这个队列是懒初始化(没有线程争抢锁的时候就不需要队列, 就不需要进行初始化了)
         if (pred != null) {
             // node设置自己的前驱为pred
@@ -270,7 +270,7 @@ public abstract class MyAbstractQueuedSynchronizer {
          */
         // 当前节点的后继
         Node s = node.next;
-        //如果这个后继节点是空, 或者取消了排队
+        //如果这个后继节点是空, 或者取消了排队, 那么进入这个if代码块
         if (s == null || s.waitStatus > 0) {
             s = null;
             // 从队尾往前找，找到waitStatus<=0的所有节点中排在最前面的
@@ -499,7 +499,7 @@ public abstract class MyAbstractQueuedSynchronizer {
      * 如果计数器为0, 那么就彻底释放
      */
     public final boolean release(int arg) {
-        // 1. 释放锁
+        // 1. 尝试释放锁
         if (tryRelease(arg)) {
             // 如果锁没有嵌套的了, 可以完全释放了的话, 就会进入到这个if中
             // 2. 如果独占锁释放"完全"，唤醒后继节点
@@ -589,7 +589,7 @@ public abstract class MyAbstractQueuedSynchronizer {
     }
 
     /**
-     * 是否有线程在等待
+     * 判断"当前线程"是不是在CLH队列的队首,来返回AQS中是不是有比“当前线程”等待更久的线程
      */
     public final boolean hasQueuedPredecessors() {
         // The correctness of this depends on head being initialized
@@ -688,7 +688,7 @@ public abstract class MyAbstractQueuedSynchronizer {
     /**
      * Transfers a node from a condition queue onto sync queue.
      * Returns true if successful.
-     * 将节点从条件队列转移到阻塞队列
+     * 将节点从条件队列转移到锁的`等待队列`
      *
      * @param node the node
      * @return true if successfully transferred (else the node was
@@ -1086,11 +1086,11 @@ public abstract class MyAbstractQueuedSynchronizer {
     }
 
     public final void acquireShared(int arg) {
-        // 和acquireSharedInterruptibly(int arg) 方法相比,
-        // 就少了判断线程中断, 抛异常
+        // 和acquireSharedInterruptibly(int arg) 方法相比, 就少了判断线程中断抛异常
 
-        // 尝试获取锁失败, 就会执行 doAcquireSharedInterruptibly(1)
+        // 尝试获取锁
         if (tryAcquireShared(arg) < 0)
+            // 如果if语句里尝试获取锁失败, 就会执行 doAcquireSharedInterruptibly(1)
             doAcquireShared(arg);
     }
 
@@ -1270,7 +1270,7 @@ public abstract class MyAbstractQueuedSynchronizer {
         private Node addConditionWaiter() {
             Node t = lastWaiter;
             // If lastWaiter is cancelled, clean out.
-            // 如果条件队列的最后一个节点取消了，将其清除出去
+            // 如果条件队列的最后一个节点取消了，那么就准备清除
             if (t != null && t.waitStatus != Node.CONDITION) {
                 // 这个方法会遍历整个条件队列，然后会将已取消的所有节点清除出队列
                 unlinkCancelledWaiters();
@@ -1289,8 +1289,8 @@ public abstract class MyAbstractQueuedSynchronizer {
          * null. Split out from signal in part to encourage compilers
          * to inline the case of no waiters.
          * <p>
-         * 从条condition队头往后遍历，找出第一个需要转移的 node
-         * 因为前面我们说过，有些线程会取消排队，但是还在队列中
+         * 从condition队头往后遍历，找出第一个需要转移的 node
+         * 有些线程会取消排队，但是还在队列中
          *
          * @param first (non-null) the first node on condition queue
          */
@@ -1302,8 +1302,7 @@ public abstract class MyAbstractQueuedSynchronizer {
                     lastWaiter = null;
                 // 因为 first 马上要被移到阻塞队列了，和条件队列的链接关系在这里断掉
                 first.nextWaiter = null;
-            } while (!transferForSignal(first) &&
-                    (first = firstWaiter) != null);
+            } while (!transferForSignal(first) && (first = firstWaiter) != null);
             // 这里 while 循环，如果 first 转移不成功，那么选择 first 后面的第一个节点进行转移，依此类推
         }
 
@@ -1365,11 +1364,9 @@ public abstract class MyAbstractQueuedSynchronizer {
          * wait queue for this condition to the wait queue for the
          * owning lock.
          *
-         * @throws IllegalMonitorStateException if {@link #isHeldExclusively}
-         *                                      returns {@code false}
+         * 唤醒等待了最久的线程
+         * 其实就是，将这个线程对应的 node 从条件队列转移到阻塞队列
          */
-        // 唤醒等待了最久的线程
-        // 其实就是，将这个线程对应的 node 从条件队列转移到阻塞队列
         public final void signal() {
             // 调用 signal 方法的线程必须持有当前的独占锁
             if (!isHeldExclusively()) throw new IllegalMonitorStateException();
@@ -1462,14 +1459,15 @@ public abstract class MyAbstractQueuedSynchronizer {
          * {@link #acquire} with saved state as argument.
          * <li> If interrupted while blocked in step 4, throw InterruptedException.
          * </ol>
+         * <p>
+         * 这个方法是可被中断的，不可被中断的是另一个方法 awaitUninterruptibly()
+         * 这个方法会阻塞，直到调用 signal 方法（指 signal() 和 signalAll()，下同），或被中断
          */
-        // 首先，这个方法是可被中断的，不可被中断的是另一个方法 awaitUninterruptibly()
-        // 这个方法会阻塞，直到调用 signal 方法（指 signal() 和 signalAll()，下同），或被中断
         public final void await() throws InterruptedException {
             if (Thread.interrupted()) throw new InterruptedException();
             // 添加到 condition 的条件队列中
             Node node = addConditionWaiter();
-            // 释放锁，返回值是释放锁之前的 state 值
+            // 完全释放锁，返回值是释放锁之前的 state 值
             int savedState = fullyRelease(node);
             int interruptMode = 0;
             // 这里退出循环有两种情况，之后再仔细分析
@@ -1481,7 +1479,6 @@ public abstract class MyAbstractQueuedSynchronizer {
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)
                     break;
             }
-            // 被唤醒后，将进入阻塞队列，等待获取锁
             if (acquireQueued(node, savedState) && interruptMode != THROW_IE)
                 interruptMode = REINTERRUPT;
             if (node.nextWaiter != null) // clean up if cancelled
