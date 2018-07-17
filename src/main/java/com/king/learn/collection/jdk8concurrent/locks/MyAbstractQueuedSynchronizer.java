@@ -1363,7 +1363,7 @@ public abstract class MyAbstractQueuedSynchronizer {
          * Moves the longest-waiting thread, if one exists, from the
          * wait queue for this condition to the wait queue for the
          * owning lock.
-         *
+         * <p>
          * 唤醒等待了最久的线程
          * 其实就是，将这个线程对应的 node 从条件队列转移到阻塞队列
          */

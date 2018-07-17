@@ -1,4 +1,4 @@
-package com.king.learn.collection.myconcurrent;
+package com.king.learn.collection.myconcurrent.cache;
 
 import java.io.IOException;
 import java.io.Serializable;

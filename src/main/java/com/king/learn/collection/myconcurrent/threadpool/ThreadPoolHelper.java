@@ -1,4 +1,4 @@
-package com.king.learn.collection.cache;
+package com.king.learn.collection.myconcurrent.threadpool;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
