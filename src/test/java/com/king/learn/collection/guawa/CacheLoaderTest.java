@@ -1,4 +1,4 @@
-package com.king.learn.collection;
+package com.king.learn.collection.guawa;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
