@@ -1,5 +1,9 @@
 package com.king.learn.collection.mycollection.bloomfilter;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.*;
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,14 +16,15 @@ public class BloomFilter implements Serializable {
     private final int[] seeds;
     private final int size;
     private final BitSet notebook;
+
+    @Getter
     private final MisjudgmentRate rate;
+
     private final AtomicInteger useCount = new AtomicInteger(0);
     private final Double autoClearRate;
 
     /**
      * 默认中等程序的误判率：MisjudgmentRate.MIDDLE 以及不自动清空数据（性能会有少许提升）
-     *
-     * @param dataCount 预期处理的数据规模，如预期用于处理1百万数据的查重，这里则填写1000000
      */
     public BloomFilter(int dataCount) {
         this(MisjudgmentRate.MIDDLE, dataCount, null);
@@ -37,6 +42,7 @@ public class BloomFilter implements Serializable {
         if (bitSize < 0 || bitSize > Integer.MAX_VALUE) {
             throw new RuntimeException("位数太大溢出了，请降低误判率或者降低数据大小");
         }
+
         this.rate = rate;
         seeds = rate.seeds;
         size = (int) bitSize;
@@ -67,30 +73,27 @@ public class BloomFilter implements Serializable {
         System.out.println(fileter.addIfNotExist("1111111111111"));
     }
 
-    public void add(String data) {
-        checkNeedClear();
+//    public void add(String data) {
+//        checkNeedClear();
+//
+//        for (int seed : seeds) {
+//            int index = hash(data, seed);
+//            setTrue(index);
+//        }
+//    }
 
-        for (int i = 0; i < seeds.length; i++) {
-            int index = hash(data, seeds[i]);
-            setTrue(index);
-        }
-    }
-
-    public boolean check(String data) {
-        for (int i = 0; i < seeds.length; i++) {
-            int index = hash(data, seeds[i]);
-            if (!notebook.get(index)) {
-                return false;
-            }
-        }
-        return true;
-    }
+//    public boolean check(String data) {
+//        for (int seed : seeds) {
+//            int index = hash(data, seed);
+//            if (!notebook.get(index)) {
+//                return false;
+//            }
+//        }
+//        return true;
+//    }
 
     /**
      * 如果不存在就进行记录并返回false，如果存在了就返回true
-     *
-     * @param data
-     * @return
      */
     public boolean addIfNotExist(String data) {
         checkNeedClear();
@@ -102,7 +105,6 @@ public class BloomFilter implements Serializable {
 
         for (int i = 0; i < seeds.length; i++) {
             indexs[i] = index = hash(data, seeds[i]);
-
             if (exist) {
                 if (!notebook.get(index)) {
                     // 只要有一个不存在，就可以认为整个字符串都是第一次出现的
@@ -116,9 +118,7 @@ public class BloomFilter implements Serializable {
                 setTrue(index);
             }
         }
-
         return exist;
-
     }
 
     private void checkNeedClear() {
@@ -143,12 +143,10 @@ public class BloomFilter implements Serializable {
         char[] value = data.toCharArray();
         int hash = 0;
         if (value.length > 0) {
-
             for (int i = 0; i < value.length; i++) {
                 hash = i * hash + value[i];
             }
         }
-
         hash = hash * seeds % size;
         // 防止溢出变成负数
         return Math.abs(hash);
@@ -164,7 +162,6 @@ public class BloomFilter implements Serializable {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     /**
@@ -175,23 +172,14 @@ public class BloomFilter implements Serializable {
         notebook.clear();
     }
 
-    public MisjudgmentRate getRate() {
-        return rate;
-    }
-
     /**
      * 分配的位数越多，误判率越低但是越占内存
-     * <p>
      * 4个位误判率大概是0.14689159766308
-     * <p>
      * 8个位误判率大概是0.02157714146322
-     * <p>
      * 16个位误判率大概是0.00046557303372
-     * <p>
      * 32个位误判率大概是0.00000021167340
-     *
-     * @author lianghaohui
      */
+    @AllArgsConstructor
     public enum MisjudgmentRate {
         // 这里要选取质数，能很好的降低错误率
         /**
@@ -201,30 +189,18 @@ public class BloomFilter implements Serializable {
         /**
          * 每个字符串分配8个位
          */
-        SMALL(new int[]{2, 3, 5, 7, 11, 13, 17, 19}), //
+        SMALL(new int[]{2, 3, 5, 7, 11, 13, 17, 19}),
         /**
          * 每个字符串分配16个位
          */
-        MIDDLE(new int[]{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53}), //
+        MIDDLE(new int[]{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53}),
         /**
          * 每个字符串分配32个位
          */
-        HIGH(new int[]{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97,
-                101, 103, 107, 109, 113, 127, 131});
+        HIGH(new int[]{2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101, 103, 107, 109, 113, 127, 131});
 
+        @Getter
+        @Setter
         private int[] seeds;
-
-        private MisjudgmentRate(int[] seeds) {
-            this.seeds = seeds;
-        }
-
-        public int[] getSeeds() {
-            return seeds;
-        }
-
-        public void setSeeds(int[] seeds) {
-            this.seeds = seeds;
-        }
-
     }
 }  
