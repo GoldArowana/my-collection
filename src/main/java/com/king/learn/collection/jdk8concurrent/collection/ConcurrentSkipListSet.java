@@ -45,7 +45,7 @@ import java.util.concurrent.ConcurrentNavigableMap;
  * or by a {@link Comparator} provided at set creation time, depending
  * on which constructor is used.
  *
- * <p>This implementation provides expected average <i>log(n)</i> time
+ * <p>This implementation provides expected average <i>log(counter)</i> time
  * cost for the {@code contains}, {@code add}, and {@code remove}
  * operations and their variants.  Insertion, removal, and access
  * operations safely execute concurrently by multiple threads.

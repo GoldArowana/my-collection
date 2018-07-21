@@ -64,8 +64,8 @@ import java.util.concurrent.*;
  *         = new ExecutorCompletionService<Result>(e);
  *     for (Callable<Result> s : solvers)
  *         ecs.submit(s);
- *     int n = solvers.size();
- *     for (int i = 0; i < n; ++i) {
+ *     int counter = solvers.size();
+ *     for (int i = 0; i < counter; ++i) {
  *         Result r = ecs.take().get();
  *         if (r != null)
  *             use(r);
@@ -82,14 +82,14 @@ import java.util.concurrent.*;
  *     throws InterruptedException {
  *     CompletionService<Result> ecs
  *         = new ExecutorCompletionService<Result>(e);
- *     int n = solvers.size();
+ *     int counter = solvers.size();
  *     List<Future<Result>> futures
- *         = new ArrayList<Future<Result>>(n);
+ *         = new ArrayList<Future<Result>>(counter);
  *     Result result = null;
  *     try {
  *         for (Callable<Result> s : solvers)
  *             futures.add(ecs.submit(s));
- *         for (int i = 0; i < n; ++i) {
+ *         for (int i = 0; i < counter; ++i) {
  *             try {
  *                 Result r = ecs.take().get();
  *                 if (r != null) {

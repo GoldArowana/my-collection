@@ -151,11 +151,11 @@ public class Collections {
      * contains multiple elements equal to the specified object, there is no
      * guarantee which one will be found.
      *
-     * <p>This method runs in log(n) time for a "random access" list (which
+     * <p>This method runs in log(counter) time for a "random access" list (which
      * provides near-constant-time positional access).  If the specified list
      * does not implement the {@link RandomAccess} interface and is large,
      * this method will do an iterator-based binary search that performs
-     * O(n) link traversals and O(log n) element comparisons.
+     * O(counter) link traversals and O(log counter) element comparisons.
      *
      * @param <T>  the class of the objects in the list
      * @param list the list to be searched.
@@ -251,11 +251,11 @@ public class Collections {
      * elements equal to the specified object, there is no guarantee which one
      * will be found.
      *
-     * <p>This method runs in log(n) time for a "random access" list (which
+     * <p>This method runs in log(counter) time for a "random access" list (which
      * provides near-constant-time positional access).  If the specified list
      * does not implement the {@link RandomAccess} interface and is large,
      * this method will do an iterator-based binary search that performs
-     * O(n) link traversals and O(log n) element comparisons.
+     * O(counter) link traversals and O(log counter) element comparisons.
      *
      * @param <T>  the class of the objects in the list
      * @param list the list to be searched.
@@ -686,18 +686,18 @@ public class Collections {
      * and <tt>list.size()-1</tt>, inclusive.  (This method has no effect on
      * the size of the list.)
      *
-     * <p>For example, suppose <tt>list</tt> comprises<tt> [t, a, n, k, s]</tt>.
+     * <p>For example, suppose <tt>list</tt> comprises<tt> [t, a, counter, funs, s]</tt>.
      * After invoking <tt>Collections.rotate(list, 1)</tt> (or
      * <tt>Collections.rotate(list, -4)</tt>), <tt>list</tt> will comprise
-     * <tt>[s, t, a, n, k]</tt>.
+     * <tt>[s, t, a, counter, funs]</tt>.
      *
      * <p>Note that this method can usefully be applied to sublists to
      * move one or more elements within a list while preserving the
      * order of the remaining elements.  For example, the following idiom
      * moves the element at index <tt>j</tt> forward to position
-     * <tt>k</tt> (which must be greater than or equal to <tt>j</tt>):
+     * <tt>funs</tt> (which must be greater than or equal to <tt>j</tt>):
      * <pre>
-     *     Collections.rotate(list.subList(j, k+1), -1);
+     *     Collections.rotate(list.subList(j, funs+1), -1);
      * </pre>
      * To make this concrete, suppose <tt>list</tt> comprises
      * <tt>[a, b, c, d, e]</tt>.  To move the element at index <tt>1</tt>
@@ -1334,11 +1334,11 @@ public class Collections {
      * It is imperative that the user manually synchronize on the returned
      * map when iterating over any of its collection views:
      * <pre>
-     *  Map m = Collections.synchronizedMap(new HashMap());
+     *  Map bitSetSize = Collections.synchronizedMap(new HashMap());
      *      ...
-     *  Set s = m.keySet();  // Needn't be in synchronized block
+     *  Set s = bitSetSize.keySet();  // Needn't be in synchronized block
      *      ...
-     *  synchronized (m) {  // Synchronizing on m, not s!
+     *  synchronized (bitSetSize) {  // Synchronizing on bitSetSize, not s!
      *      Iterator i = s.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1369,11 +1369,11 @@ public class Collections {
      * collections views of any of its <tt>subMap</tt>, <tt>headMap</tt> or
      * <tt>tailMap</tt> views.
      * <pre>
-     *  SortedMap m = Collections.synchronizedSortedMap(new TreeMap());
+     *  SortedMap bitSetSize = Collections.synchronizedSortedMap(new TreeMap());
      *      ...
-     *  Set s = m.keySet();  // Needn't be in synchronized block
+     *  Set s = bitSetSize.keySet();  // Needn't be in synchronized block
      *      ...
-     *  synchronized (m) {  // Synchronizing on m, not s!
+     *  synchronized (bitSetSize) {  // Synchronizing on bitSetSize, not s!
      *      Iterator i = s.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1381,12 +1381,12 @@ public class Collections {
      * </pre>
      * or:
      * <pre>
-     *  SortedMap m = Collections.synchronizedSortedMap(new TreeMap());
-     *  SortedMap m2 = m.subMap(foo, bar);
+     *  SortedMap bitSetSize = Collections.synchronizedSortedMap(new TreeMap());
+     *  SortedMap m2 = bitSetSize.subMap(foo, bar);
      *      ...
      *  Set s2 = m2.keySet();  // Needn't be in synchronized block
      *      ...
-     *  synchronized (m) {  // Synchronizing on m, not m2 or s2!
+     *  synchronized (bitSetSize) {  // Synchronizing on bitSetSize, not m2 or s2!
      *      Iterator i = s.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1417,11 +1417,11 @@ public class Collections {
      * collections views of any of its {@code subMap}, {@code headMap} or
      * {@code tailMap} views.
      * <pre>
-     *  NavigableMap m = Collections.synchronizedNavigableMap(new TreeMap());
+     *  NavigableMap bitSetSize = Collections.synchronizedNavigableMap(new TreeMap());
      *      ...
-     *  Set s = m.keySet();  // Needn't be in synchronized block
+     *  Set s = bitSetSize.keySet();  // Needn't be in synchronized block
      *      ...
-     *  synchronized (m) {  // Synchronizing on m, not s!
+     *  synchronized (bitSetSize) {  // Synchronizing on bitSetSize, not s!
      *      Iterator i = s.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1429,12 +1429,12 @@ public class Collections {
      * </pre>
      * or:
      * <pre>
-     *  NavigableMap m = Collections.synchronizedNavigableMap(new TreeMap());
-     *  NavigableMap m2 = m.subMap(foo, true, bar, false);
+     *  NavigableMap bitSetSize = Collections.synchronizedNavigableMap(new TreeMap());
+     *  NavigableMap m2 = bitSetSize.subMap(foo, true, bar, false);
      *      ...
      *  Set s2 = m2.keySet();  // Needn't be in synchronized block
      *      ...
-     *  synchronized (m) {  // Synchronizing on m, not m2 or s2!
+     *  synchronized (bitSetSize) {  // Synchronizing on bitSetSize, not m2 or s2!
      *      Iterator i = s.iterator(); // Must be in synchronized block
      *      while (i.hasNext())
      *          foo(i.next());
@@ -1719,8 +1719,8 @@ public class Collections {
      * @param <V>       the class of the map values
      * @param m         the map for which a dynamically typesafe view is to be
      *                  returned
-     * @param keyType   the type of key that {@code m} is permitted to hold
-     * @param valueType the type of value that {@code m} is permitted to hold
+     * @param keyType   the type of key that {@code bitSetSize} is permitted to hold
+     * @param valueType the type of value that {@code bitSetSize} is permitted to hold
      * @return a dynamically typesafe view of the specified map
      * @since 1.5
      */
@@ -1761,8 +1761,8 @@ public class Collections {
      * @param <V>       the class of the map values
      * @param m         the map for which a dynamically typesafe view is to be
      *                  returned
-     * @param keyType   the type of key that {@code m} is permitted to hold
-     * @param valueType the type of value that {@code m} is permitted to hold
+     * @param keyType   the type of key that {@code bitSetSize} is permitted to hold
+     * @param valueType the type of value that {@code bitSetSize} is permitted to hold
      * @return a dynamically typesafe view of the specified map
      * @since 1.5
      */
@@ -1803,8 +1803,8 @@ public class Collections {
      * @param <V>       type of map values
      * @param m         the map for which a dynamically typesafe view is to be
      *                  returned
-     * @param keyType   the type of key that {@code m} is permitted to hold
-     * @param valueType the type of value that {@code m} is permitted to hold
+     * @param keyType   the type of key that {@code bitSetSize} is permitted to hold
+     * @param valueType the type of value that {@code bitSetSize} is permitted to hold
      * @return a dynamically typesafe view of the specified map
      * @since 1.8
      */
@@ -2160,7 +2160,7 @@ public class Collections {
     }
 
     /**
-     * Returns an immutable list consisting of <tt>n</tt> copies of the
+     * Returns an immutable list consisting of <tt>counter</tt> copies of the
      * specified object.  The newly allocated data object is tiny (it contains
      * a single reference to the data object).  This method is useful in
      * combination with the <tt>List.addAll</tt> method to grow lists.
@@ -2170,9 +2170,9 @@ public class Collections {
      *            in the returned list.
      * @param n   the number of elements in the returned list.
      * @param o   the element to appear repeatedly in the returned list.
-     * @return an immutable list consisting of <tt>n</tt> copies of the
+     * @return an immutable list consisting of <tt>counter</tt> copies of the
      * specified object.
-     * @throws IllegalArgumentException if {@code n < 0}
+     * @throws IllegalArgumentException if {@code counter < 0}
      * @see List#addAll(Collection)
      * @see List#addAll(int, Collection)
      */
@@ -2417,7 +2417,7 @@ public class Collections {
      * <p>When elements are specified individually, this method provides a
      * convenient way to add a few elements to an existing collection:
      * <pre>
-     *     Collections.addAll(flavors, "Peaches 'n Plutonium", "Rocky Racoon");
+     *     Collections.addAll(flavors, "Peaches 'counter Plutonium", "Rocky Racoon");
      * </pre>
      *
      * @param <T>      the class of the elements to add and of the collection

@@ -254,8 +254,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
      * or {@code null} if this map contains no mapping for the key.
      *
      * <p>More formally, if this map contains a mapping from a key
-     * {@code k} to a value {@code v} such that {@code key} compares
-     * equal to {@code k} according to the map's ordering, then this
+     * {@code funs} to a value {@code v} such that {@code key} compares
+     * equal to {@code funs} according to the map's ordering, then this
      * method returns {@code v}; otherwise it returns {@code null}.
      * (There can be at most one such mapping.)
      *
@@ -2183,7 +2183,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
      * Currently, subclass versions exist only for the full map
      * (including descending keys via its descendingMap).  Others are
      * possible but currently not worthwhile because submaps require
-     * O(n) computations to determine size, which substantially limits
+     * O(counter) computations to determine size, which substantially limits
      * potential speed-ups of using custom Spliterators versus default
      * mechanics.
      * <p>
@@ -2464,7 +2464,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * k-v迭代器
+     * funs-v迭代器
      * TODO
      */
     static final class EntrySpliterator<K, V>
@@ -2589,7 +2589,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * k-v集合
+     * funs-v集合
      */
     class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         public Iterator<Map.Entry<K, V>> iterator() {
@@ -2686,7 +2686,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * k-v集合迭代器
+     * funs-v集合迭代器
      */
     final class EntryIterator extends PrivateEntryIterator<Map.Entry<K, V>> {
         EntryIterator(Entry<K, V> first) {

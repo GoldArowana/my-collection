@@ -149,7 +149,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * time (modulo retries for consistency checks) when it is
      * cancelled. But if it may be pinned as the current tail, it must
      * wait until some subsequent cancellation. For stacks, we need a
-     * potentially O(n) traversal to be sure that we can remove the
+     * potentially O(counter) traversal to be sure that we can remove the
      * node, but this can run concurrently with other threads
      * accessing the stack.
      *
@@ -614,7 +614,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
         volatile SNode head;
 
         /**
-         * Returns true if m has fulfilling bit set.
+         * Returns true if bitSetSize has fulfilling bit set.
          */
         static boolean isFulfilling(int m) {
             return (m & FULFILLING) != 0;
@@ -691,7 +691,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                         casHead(h, h.next);         // pop and retry
                     else if (casHead(h, s = snode(s, e, h, FULFILLING | mode))) {
                         for (; ; ) { // loop until matched or waiters disappear
-                            SNode m = s.next;       // m is s's match
+                            SNode m = s.next;       // bitSetSize is s's match
                             if (m == null) {        // all waiters are gone
                                 casHead(s, null);   // pop fulfill node
                                 s = null;           // use new node next time
@@ -699,20 +699,20 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                             }
                             SNode mn = m.next;
                             if (m.tryMatch(s)) {
-                                casHead(s, mn);     // pop both s and m
+                                casHead(s, mn);     // pop both s and bitSetSize
                                 return (E) ((mode == REQUEST) ? m.item : s.item);
                             } else                  // lost match
                                 s.casNext(m, mn);   // help unlink
                         }
                     }
                 } else {                            // help a fulfiller
-                    SNode m = h.next;               // m is h's match
+                    SNode m = h.next;               // bitSetSize is h's match
                     if (m == null)                  // waiter is gone
                         casHead(h, null);           // pop fulfilling node
                     else {
                         SNode mn = m.next;
                         if (m.tryMatch(h))          // help match
-                            casHead(h, mn);         // pop both h and m
+                            casHead(h, mn);         // pop both h and bitSetSize
                         else                        // lost match
                             h.casNext(m, mn);       // help unlink
                     }
@@ -1054,8 +1054,8 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                         continue;                   // inconsistent read
 
                     Object x = m.item;
-                    if (isData == (x != null) ||    // m already fulfilled
-                            x == m ||                   // m cancelled
+                    if (isData == (x != null) ||    // bitSetSize already fulfilled
+                            x == m ||                   // bitSetSize cancelled
                             !m.casItem(x, e)) {         // lost CAS
                         advanceHead(h, m);          // dequeue and retry
                         continue;

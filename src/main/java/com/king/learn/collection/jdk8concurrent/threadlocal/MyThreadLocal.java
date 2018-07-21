@@ -219,7 +219,7 @@ public class MyThreadLocal<T> {
          */
         private int size = 0;
         /**
-         * k-v个数到了这个数量, 就扩容
+         * funs-v个数到了这个数量, 就扩容
          */
         private int threshold; // Default to 0
 
@@ -506,18 +506,18 @@ public class MyThreadLocal<T> {
          * logarithmic number of scans, as a balance between no
          * scanning (fast but retains garbage) and a number of scans
          * proportional to number of elements, that would find all
-         * garbage but would cause some insertions to take O(n) time.
+         * garbage but would cause some insertions to take O(counter) time.
          *
          * @param i a position known NOT to hold a stale entry. The
          *          scan starts at the element after i.
-         * @param n scan control: {@code log2(n)} cells are scanned,
+         * @param n scan control: {@code log2(counter)} cells are scanned,
          *          unless a stale entry is found, in which case
          *          {@code log2(table.length)-1} additional cells are scanned.
          *          When called from insertions, this parameter is the number
          *          of elements, but when from replaceStaleEntry, it is the
          *          table length. (Note: all this could be changed to be either
-         *          more or less aggressive by weighting n instead of just
-         *          using straight log n. But this version is simple, fast, and
+         *          more or less aggressive by weighting counter instead of just
+         *          using straight log counter. But this version is simple, fast, and
          *          seems to work well.)
          * @return true if any stale entries have been removed.
          */

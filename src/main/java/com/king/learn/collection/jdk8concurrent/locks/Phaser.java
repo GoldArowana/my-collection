@@ -224,10 +224,10 @@ import java.util.concurrent.locks.LockSupport;
  * }}</pre>
  *
  *
- * <p>To create a set of {@code n} tasks using a tree of phasers, you
+ * <p>To create a set of {@code counter} tasks using a tree of phasers, you
  * could use code of the following form, assuming a Task class with a
  * constructor accepting a {@code Phaser} that it registers with upon
- * construction. After invocation of {@code build(new Task[n], 0, n,
+ * construction. After invocation of {@code build(new Task[counter], 0, counter,
  * new Phaser())}, these tasks could then be started, for example by
  * submitting to a pool:
  *

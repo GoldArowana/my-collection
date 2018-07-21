@@ -95,8 +95,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
      * Whenever an element is enqueued, the putLock is acquired and
      * count updated.  A subsequent reader guarantees visibility to the
      * enqueued Node by either acquiring the putLock (via fullyLock)
-     * or by acquiring the takeLock, and then reading n = count.get();
-     * this gives visibility to the first n items.
+     * or by acquiring the takeLock, and then reading counter = count.get();
+     * this gives visibility to the first counter items.
      *
      * To implement weakly consistent iterators, it appears we need to
      * keep all Nodes GC-reachable from a predecessor dequeued Node.
@@ -754,7 +754,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         takeLock.lock();
         try {
             int n = Math.min(maxElements, count.get());
-            // count.get provides visibility to first n Nodes
+            // count.get provides visibility to first counter Nodes
             Node<E> h = head;
             int i = 0;
             try {

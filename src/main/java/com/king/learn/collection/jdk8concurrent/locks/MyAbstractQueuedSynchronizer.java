@@ -770,7 +770,7 @@ public abstract class MyAbstractQueuedSynchronizer {
     // 首先，我们要先观察到返回值 savedState 代表 release 之前的 state 值
     // 对于最简单的操作：先 lock.lock()，然后 condition1.await()。
     //         那么 state 经过这个方法由 1 变为 0，锁释放，此方法返回 1
-    //         相应的，如果 lock 重入了 n 次，savedState == n
+    //         相应的，如果 lock 重入了 counter 次，savedState == counter
     // 如果这个方法失败，会将节点设置为"取消"状态，并抛出异常 IllegalMonitorStateException
     final int fullyRelease(Node node) {
         boolean failed = true;

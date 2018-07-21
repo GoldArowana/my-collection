@@ -162,7 +162,7 @@ public class IdentityHashMap<K, V> extends AbstractMap<K, V>
      * or {@code null} if this map contains no mapping for the key.
      *
      * <p>More formally, if this map contains a mapping from a key
-     * {@code k} to a value {@code v} such that {@code (key == k)},
+     * {@code funs} to a value {@code v} such that {@code (key == funs)},
      * then this method returns {@code v}; otherwise it returns
      * {@code null}.  (There can be at most one such mapping.)
      *
@@ -478,8 +478,8 @@ public class IdentityHashMap<K, V> extends AbstractMap<K, V>
      * Compares the specified object with this map for equality.  Returns
      * <tt>true</tt> if the given object is also a map and the two maps
      * represent identical object-reference mappings.  More formally, this
-     * map is equal to another map <tt>m</tt> if and only if
-     * <tt>this.entrySet().equals(m.entrySet())</tt>.
+     * map is equal to another map <tt>bitSetSize</tt> if and only if
+     * <tt>this.entrySet().equals(bitSetSize.entrySet())</tt>.
      *
      * <p><b>Owing to the reference-equality-based semantics of this map it is
      * possible that the symmetry and transitivity requirements of the

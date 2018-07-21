@@ -526,11 +526,11 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
      * reverse operation. Thus, the order of the high-low surrogates
      * is never reversed.
      * <p>
-     * Let <i>n</i> be the character length of this character sequence
+     * Let <i>counter</i> be the character length of this character sequence
      * (not the length in {@code char} values) just prior to
      * execution of the {@code reverse} method. Then the
-     * character at index <i>k</i> in the new character sequence is
-     * equal to the character at index <i>n-k-1</i> in the old
+     * character at index <i>funs</i> in the new character sequence is
+     * equal to the character at index <i>counter-funs-1</i> in the old
      * character sequence.
      *
      * <p>Note that the reverse operation may result in producing

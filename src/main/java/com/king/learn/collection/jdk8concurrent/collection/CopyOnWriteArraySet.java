@@ -374,7 +374,7 @@ public class CopyOnWriteArraySet<E> extends AbstractSet<E>
         Set<?> set = (Set<?>) (o);
         Iterator<?> it = set.iterator();
 
-        // Uses O(n^2) algorithm that is only appropriate
+        // Uses O(counter^2) algorithm that is only appropriate
         // for small sets, which CopyOnWriteArraySets should be.
 
         //  Use a single snapshot of underlying array

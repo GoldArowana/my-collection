@@ -53,7 +53,7 @@ import java.util.function.Function;
  *
  * <p>This class implements a concurrent variant of <a
  * href="http://en.wikipedia.org/wiki/Skip_list" target="_top">SkipLists</a>
- * providing expected average <i>log(n)</i> time cost for the
+ * providing expected average <i>log(counter)</i> time cost for the
  * {@code containsKey}, {@code get}, {@code put} and
  * {@code remove} operations and their variants.  Insertion, removal,
  * update, and access operations safely execute concurrently by
@@ -181,29 +181,29 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * even when deleted. Using any other marker value here would be
      * messy at best.)
      *
-     * Here's the sequence of events for a deletion of node n with
+     * Here's the sequence of events for a deletion of node counter with
      * predecessor b and successor f, initially:
      *
      *        +------+       +------+      +------+
-     *   ...  |   b  |------>|   n  |----->|   f  | ...
+     *   ...  |   b  |------>|   counter  |----->|   f  | ...
      *        +------+       +------+      +------+
      *
-     * 1. CAS n's value field from non-null to null.
+     * 1. CAS counter's value field from non-null to null.
      *    From this point on, no public operations encountering
      *    the node consider this mapping to exist. However, other
      *    ongoing insertions and deletions might still modify
-     *    n's next pointer.
+     *    counter's next pointer.
      *
-     * 2. CAS n's next pointer to point to a new marker node.
-     *    From this point on, no other nodes can be appended to n.
+     * 2. CAS counter's next pointer to point to a new marker node.
+     *    From this point on, no other nodes can be appended to counter.
      *    which avoids deletion errors in CAS-based linked lists.
      *
      *        +------+       +------+      +------+       +------+
-     *   ...  |   b  |------>|   n  |----->|marker|------>|   f  | ...
+     *   ...  |   b  |------>|   counter  |----->|marker|------>|   f  | ...
      *        +------+       +------+      +------+       +------+
      *
-     * 3. CAS b's next pointer over both n and its marker.
-     *    From this point on, no new traversals will encounter n,
+     * 3. CAS b's next pointer over both counter and its marker.
+     *    From this point on, no new traversals will encounter counter,
      *    and it can eventually be GCed.
      *        +------+                                    +------+
      *   ...  |   b  |----------------------------------->|   f  | ...
@@ -216,8 +216,8 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * ensures that no thread can become stuck waiting for progress of
      * the deleting thread.  The use of marker nodes slightly
      * complicates helping-out code because traversals must track
-     * consistent reads of up to four nodes (b, n, marker, f), not
-     * just (b, n, f), although the next field of a marker is
+     * consistent reads of up to four nodes (b, counter, marker, f), not
+     * just (b, counter, f), although the next field of a marker is
      * immutable, and once a next field is CAS'ed to point to a
      * marker, it never again changes, so this requires less care.
      *
@@ -264,7 +264,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      *
      * Indexing uses skip list parameters that maintain good search
      * performance while using sparser-than-usual indices: The
-     * hardwired parameters k=1, p=0.5 (see method doPut) mean
+     * hardwired parameters funs=1, p=0.5 (see method doPut) mean
      * that about one-quarter of the nodes have indices. Of those that
      * do, half have one level, a quarter have two, and so on (see
      * Pugh's Skip List Cookbook, sec 3.4).  The expected total space
@@ -331,12 +331,12 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * true trees) makes this tractable using only CAS operations.
      *
      * Notation guide for local variables
-     * Node:         b, n, f    for  predecessor, node, successor
+     * Node:         b, counter, f    for  predecessor, node, successor
      * Index:        q, r, d    for index node, right, down.
      *               t          for another index node
      * Head:         h
      * Levels:       j
-     * Keys:         k, key
+     * Keys:         funs, key
      * Values:       v, value
      * Comparisons:  c
      */
@@ -439,7 +439,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * the keys.
      *
      * @param m the map whose mappings are to be placed in this map
-     * @throws ClassCastException   if the keys in {@code m} are not
+     * @throws ClassCastException   if the keys in {@code bitSetSize} are not
      *                              {@link Comparable}, or are not mutually comparable
      * @throws NullPointerException if the specified map or any of its keys
      *                              or values are null
@@ -554,21 +554,21 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * encountered. Some callers rely on this side-effect of clearing
      * deleted nodes.
      * <p>
-     * Restarts occur, at traversal step centered on node n, if:
+     * Restarts occur, at traversal step centered on node counter, if:
      * <p>
-     * (1) After reading n's next field, n is no longer assumed
+     * (1) After reading counter's next field, counter is no longer assumed
      * predecessor b's current successor, which means that
      * we don't have a consistent 3-node snapshot and so cannot
      * unlink any subsequent deleted nodes encountered.
      * <p>
-     * (2) n's value field is null, indicating n is deleted, in
+     * (2) counter's value field is null, indicating counter is deleted, in
      * which case we help out an ongoing structural deletion
      * before retrying.  Even though there are cases where such
      * unlinking doesn't require restart, they aren't sorted out
      * here because doing so would not usually outweigh cost of
      * restarting.
      * <p>
-     * (3) n is a marker or n's predecessor's value field is null,
+     * (3) counter is a marker or counter's predecessor's value field is null,
      * indicating (among other possibilities) that
      * findPredecessor returned a deleted node. We can't unlink
      * the node because we don't know its predecessor, so rely
@@ -604,7 +604,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 Node<K, V> f = n.next;
                 if (n != b.next)                // inconsistent read
                     break;
-                if ((v = n.value) == null) {    // n is deleted
+                if ((v = n.value) == null) {    // counter is deleted
                     n.helpDelete(b, f);
                     break;
                 }
@@ -642,7 +642,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 Node<K, V> f = n.next;
                 if (n != b.next)                // inconsistent read
                     break;
-                if ((v = n.value) == null) {    // n is deleted
+                if ((v = n.value) == null) {    // counter is deleted
                     n.helpDelete(b, f);
                     break;
                 }
@@ -688,7 +688,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                     Node<K, V> f = n.next;
                     if (n != b.next)               // inconsistent read
                         break;
-                    if ((v = n.value) == null) {   // n is deleted
+                    if ((v = n.value) == null) {   // counter is deleted
                         n.helpDelete(b, f);
                         break;
                     }
@@ -840,7 +840,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 Node<K, V> f = n.next;
                 if (n != b.next)                    // inconsistent read
                     break;
-                if ((v = n.value) == null) {        // n is deleted
+                if ((v = n.value) == null) {        // counter is deleted
                     n.helpDelete(b, f);
                     break;
                 }
@@ -989,7 +989,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 if (n != b.next)                    // inconsistent read
                     break;
                 Object v = n.value;
-                if (v == null) {                    // n is deleted
+                if (v == null) {                    // counter is deleted
                     n.helpDelete(b, f);
                     break;
                 }
@@ -1046,7 +1046,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                     if (n != b.next)
                         break;
                     Object v = n.value;
-                    if (v == null) {                 // n is deleted
+                    if (v == null) {                 // counter is deleted
                         n.helpDelete(b, f);
                         break;
                     }
@@ -1109,7 +1109,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
                 Node<K, V> f = n.next;
                 if (n != b.next)                  // inconsistent read
                     break;
-                if ((v = n.value) == null) {      // n is deleted
+                if ((v = n.value) == null) {      // counter is deleted
                     n.helpDelete(b, f);
                     break;
                 }
@@ -1350,8 +1350,8 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * or {@code null} if this map contains no mapping for the key.
      *
      * <p>More formally, if this map contains a mapping from a key
-     * {@code k} to a value {@code v} such that {@code key} compares
-     * equal to {@code k} according to the map's ordering, then this
+     * {@code funs} to a value {@code v} such that {@code key} compares
+     * equal to {@code funs} according to the map's ordering, then this
      * method returns {@code v}; otherwise it returns {@code null}.
      * (There can be at most one such mapping.)
      *

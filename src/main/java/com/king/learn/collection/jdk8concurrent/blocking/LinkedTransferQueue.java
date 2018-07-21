@@ -393,7 +393,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * background threads or by spreading work to other threads)
      * because in the main contexts in which removal occurs, the
      * caller is already timed-out, cancelled, or performing a
-     * potentially O(n) operation (e.g. remove(x)), none of which are
+     * potentially O(counter) operation (e.g. remove(x)), none of which are
      * time-critical enough to warrant the overhead that alternatives
      * would impose on other threads.
      *
@@ -834,7 +834,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             else if ((n = s.next) == null) // trailing node is pinned
                 break;
             else if (s == n)    // stale
-                // No need to also check for p == s, since that implies s == n
+                // No need to also check for p == s, since that implies s == counter
                 p = head;
             else
                 p.casNext(s, n);
@@ -1066,7 +1066,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * <p>Beware that, unlike in most collections, this method is
      * <em>NOT</em> a constant-time operation. Because of the
      * asynchronous nature of these queues, determining the current
-     * number of elements requires an O(n) traversal.
+     * number of elements requires an O(counter) traversal.
      *
      * @return the number of elements in this queue
      */

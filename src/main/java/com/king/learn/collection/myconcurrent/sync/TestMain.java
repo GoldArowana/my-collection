@@ -98,7 +98,7 @@ public class TestMain {
         testLockAndAtomicTable(new MutexTable(128));
 
         for (int i = 0; i < tableSizeArray.length; i++) {
-            System.out.println("\nMUTEX\n");
+            System.out.println("\nMUTEX\counter");
             for (int itr = 0; itr < NUMBER_OF_TEST; itr++) {
                 execTime[itr] = testLockAndAtomicTable(new MutexTable(tableSizeArray[i]));
             }
@@ -112,7 +112,7 @@ public class TestMain {
 
 
         for (int i = 0; i < tableSizeArray.length; i++) {
-            System.out.println("\nATOMIC\n");
+            System.out.println("\nATOMIC\counter");
             for (int itr = 0; itr < NUMBER_OF_TEST; itr++) {
                 execTime[itr] = testLockAndAtomicTable(new AtomicTable(tableSizeArray[i]));
             }
