@@ -7,15 +7,16 @@ import java.io.*;
 import java.util.BitSet;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 代码源自这里: (进行了少许改动)
+ * https://github.com/jackfo/cfs-shop/blob/3bf72e6fe963a84d17548d7270071c93e86e57f3/cfs-shop-common/src/main/java/com/whpu/util/cache/BloomFileter.java
+ */
 public class BloomFilter implements Serializable {
 
     private static final long serialVersionUID = 4422582596265897335L;
     private final int size;
     private final BitSet notebook;
     private final int[] seeds;
-
-    @Getter
-    private final MisjudgmentRate rate;
     private final AtomicInteger counter;
     private final Double autoClearRate;
 
@@ -52,7 +53,6 @@ public class BloomFilter implements Serializable {
         }
 
         // 设置
-        this.rate = rate;
         seeds = rate.getSeeds();
         size = (int) bitSize;
         notebook = new BitSet(size);
@@ -167,7 +167,6 @@ public class BloomFilter implements Serializable {
      * @implSpec 4个位误判率大概是0.14689159766308
      * @implSpec 8个位误判率大概是0.02157714146322
      * @implSpec 16个位误判率大概是0.00046557303372
-     * @implSpec 32个位误判率大概是0.00000021167340
      * @implNote 这里要选取质数，能很好的降低错误率
      */
     @AllArgsConstructor
