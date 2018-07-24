@@ -44,7 +44,7 @@ public class WeakHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
      */
     int modCount;
     /**
-     * funs-v的个数
+     * funtions-v的个数
      */
     private int size;
     /**
@@ -53,7 +53,7 @@ public class WeakHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     private int threshold;
 
     /**
-     * funs-v集合
+     * funtions-v集合
      */
     private transient Set<Map.Entry<K, V>> entrySet;
 
@@ -837,7 +837,7 @@ public class WeakHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * funs-v的分片迭代器
+     * funtions-v的分片迭代器
      */
     static final class EntrySpliterator<K, V>
             extends WeakHashMapSpliterator<K, V>
@@ -1076,7 +1076,7 @@ public class WeakHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * funs-v集合类
+     * funtions-v集合类
      */
     private class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         public Iterator<Map.Entry<K, V>> iterator() {

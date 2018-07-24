@@ -162,7 +162,7 @@ public class IdentityHashMap<K, V> extends AbstractMap<K, V>
      * or {@code null} if this map contains no mapping for the key.
      *
      * <p>More formally, if this map contains a mapping from a key
-     * {@code funs} to a value {@code v} such that {@code (key == funs)},
+     * {@code funtions} to a value {@code v} such that {@code (key == funtions)},
      * then this method returns {@code v}; otherwise it returns
      * {@code null}.  (There can be at most one such mapping.)
      *

@@ -529,8 +529,8 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
      * Let <i>counter</i> be the character length of this character sequence
      * (not the length in {@code char} values) just prior to
      * execution of the {@code reverse} method. Then the
-     * character at index <i>funs</i> in the new character sequence is
-     * equal to the character at index <i>counter-funs-1</i> in the old
+     * character at index <i>funtions</i> in the new character sequence is
+     * equal to the character at index <i>counter-funtions-1</i> in the old
      * character sequence.
      *
      * <p>Note that the reverse operation may result in producing

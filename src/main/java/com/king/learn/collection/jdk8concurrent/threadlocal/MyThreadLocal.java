@@ -219,7 +219,7 @@ public class MyThreadLocal<T> {
          */
         private int size = 0;
         /**
-         * funs-v个数到了这个数量, 就扩容
+         * funtions-v个数到了这个数量, 就扩容
          */
         private int threshold; // Default to 0
 

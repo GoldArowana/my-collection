@@ -463,7 +463,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
     }
 
     /**
-     * Inserts item x at position funs, maintaining heap invariant by
+     * Inserts item x at position funtions, maintaining heap invariant by
      * promoting x up the tree until it is greater than or equal to
      * its parent, or is the root.
      * <p>
@@ -515,7 +515,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> implements Serializable {
     }
 
     /**
-     * Inserts item x at position funs, maintaining heap invariant by
+     * Inserts item x at position funtions, maintaining heap invariant by
      * demoting x down the tree repeatedly until it is less than or
      * equal to its children or is a leaf.
      *

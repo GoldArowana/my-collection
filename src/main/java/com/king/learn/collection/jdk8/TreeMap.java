@@ -254,8 +254,8 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
      * or {@code null} if this map contains no mapping for the key.
      *
      * <p>More formally, if this map contains a mapping from a key
-     * {@code funs} to a value {@code v} such that {@code key} compares
-     * equal to {@code funs} according to the map's ordering, then this
+     * {@code funtions} to a value {@code v} such that {@code key} compares
+     * equal to {@code funtions} according to the map's ordering, then this
      * method returns {@code v}; otherwise it returns {@code null}.
      * (There can be at most one such mapping.)
      *
@@ -2464,7 +2464,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * funs-v迭代器
+     * funtions-v迭代器
      * TODO
      */
     static final class EntrySpliterator<K, V>
@@ -2589,7 +2589,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * funs-v集合
+     * funtions-v集合
      */
     class EntrySet extends AbstractSet<Map.Entry<K, V>> {
         public Iterator<Map.Entry<K, V>> iterator() {
@@ -2686,7 +2686,7 @@ public class TreeMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * funs-v集合迭代器
+     * funtions-v集合迭代器
      */
     final class EntryIterator extends PrivateEntryIterator<Map.Entry<K, V>> {
         EntryIterator(Entry<K, V> first) {

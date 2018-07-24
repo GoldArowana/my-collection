@@ -443,7 +443,7 @@ public class LinkedHashMap<K, V> extends HashMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * funs-v 集合类
+     * funtions-v 集合类
      */
     final class LinkedEntrySet extends AbstractSet<Map.Entry<K, V>> {
         public final int size() {
@@ -557,7 +557,7 @@ public class LinkedHashMap<K, V> extends HashMap<K, V> implements Map<K, V> {
     }
 
     /**
-     * funs-v 集合的迭代器
+     * funtions-v 集合的迭代器
      */
     final class LinkedEntryIterator extends LinkedHashIterator
             implements Iterator<Map.Entry<K, V>> {

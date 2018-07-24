@@ -154,7 +154,7 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * Returns funs.compareTo(x) if x matches kc (funs's screened comparable
+     * Returns funtions.compareTo(x) if x matches kc (funtions's screened comparable
      * class), else 0.
      */
     @SuppressWarnings({"rawtypes", "unchecked"}) // for cast to Comparable
@@ -1053,7 +1053,7 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
             for (int i = 0; i < tab.length; ++i) {
                 // 比那里桶中的所有节点
                 for (Node<K, V> e = tab[i]; e != null; e = e.next)
-                    // 对所有节点(funs-v)进行action的相应操作
+                    // 对所有节点(funtions-v)进行action的相应操作
                     action.accept(e.key, e.value);
             }
             // 如果在执行for循环的期间中途被修改过, 那么modCount和mc值就会不一样了
@@ -2226,7 +2226,7 @@ public class HashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clone
     }
 
     /**
-     * funs-v 集合
+     * funtions-v 集合
      */
     final class EntrySet extends AbstractSet<Entry<K, V>> {
         public final int size() {

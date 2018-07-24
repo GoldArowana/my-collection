@@ -264,7 +264,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      *
      * Indexing uses skip list parameters that maintain good search
      * performance while using sparser-than-usual indices: The
-     * hardwired parameters funs=1, p=0.5 (see method doPut) mean
+     * hardwired parameters funtions=1, p=0.5 (see method doPut) mean
      * that about one-quarter of the nodes have indices. Of those that
      * do, half have one level, a quarter have two, and so on (see
      * Pugh's Skip List Cookbook, sec 3.4).  The expected total space
@@ -336,7 +336,7 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      *               t          for another index node
      * Head:         h
      * Levels:       j
-     * Keys:         funs, key
+     * Keys:         funtions, key
      * Values:       v, value
      * Comparisons:  c
      */
@@ -1350,8 +1350,8 @@ public class ConcurrentSkipListMap<K, V> extends AbstractMap<K, V>
      * or {@code null} if this map contains no mapping for the key.
      *
      * <p>More formally, if this map contains a mapping from a key
-     * {@code funs} to a value {@code v} such that {@code key} compares
-     * equal to {@code funs} according to the map's ordering, then this
+     * {@code funtions} to a value {@code v} such that {@code key} compares
+     * equal to {@code funtions} according to the map's ordering, then this
      * method returns {@code v}; otherwise it returns {@code null}.
      * (There can be at most one such mapping.)
      *

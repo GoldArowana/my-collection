@@ -115,7 +115,7 @@ import java.util.stream.Stream;
  * java.util.concurrent.atomic.LongAdder} values and initializing via
  * {@link #computeIfAbsent computeIfAbsent}. For example, to add a count
  * to a {@code ConcurrentHashMap<String,LongAdder> freqs}, you can use
- * {@code freqs.computeIfAbsent(funs -> new LongAdder()).increment();}
+ * {@code freqs.computeIfAbsent(funtions -> new LongAdder()).increment();}
  *
  * <p>This class and its views and iterators implement all of the
  * <em>optional</em> methods of the {@link Map} and {@link Iterator}
@@ -213,7 +213,7 @@ import java.util.stream.Stream;
  * key-value associations. They may be useful for example when
  * finding the key for the greatest value. Note that "plain" Entry
  * arguments can be supplied using {@code new
- * AbstractMap.SimpleEntry(funs,v)}.
+ * AbstractMap.SimpleEntry(funtions,v)}.
  *
  * <p>Bulk operations may complete abruptly, throwing an
  * exception encountered in the application of a supplied
@@ -315,7 +315,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * parameter of about 0.5 on average, given the resizing threshold
      * of 0.75, although with a large variance because of resizing
      * granularity. Ignoring variance, the expected occurrences of
-     * list size funs are (exp(-0.5) * pow(0.5, funs) / factorial(funs)). The
+     * list size funtions are (exp(-0.5) * pow(0.5, funtions) / factorial(funtions)). The
      * first values are:
      *
      * 0:    0.60653066
@@ -821,7 +821,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns funs.compareTo(x) if x matches kc (funs's screened comparable
+     * Returns funtions.compareTo(x) if x matches kc (funtions's screened comparable
      * class), else 0.
      */
     @SuppressWarnings({"rawtypes", "unchecked"}) // for cast to Comparable
@@ -920,7 +920,7 @@ public class ConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * or {@code null} if this map contains no mapping for the key.
      *
      * <p>More formally, if this map contains a mapping from a key
-     * {@code funs} to a value {@code v} such that {@code key.equals(funs)},
+     * {@code funtions} to a value {@code v} such that {@code key.equals(funtions)},
      * then this method returns {@code v}; otherwise it returns
      * {@code null}.  (There can be at most one such mapping.)
      *

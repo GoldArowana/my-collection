@@ -686,18 +686,18 @@ public class Collections {
      * and <tt>list.size()-1</tt>, inclusive.  (This method has no effect on
      * the size of the list.)
      *
-     * <p>For example, suppose <tt>list</tt> comprises<tt> [t, a, counter, funs, s]</tt>.
+     * <p>For example, suppose <tt>list</tt> comprises<tt> [t, a, counter, funtions, s]</tt>.
      * After invoking <tt>Collections.rotate(list, 1)</tt> (or
      * <tt>Collections.rotate(list, -4)</tt>), <tt>list</tt> will comprise
-     * <tt>[s, t, a, counter, funs]</tt>.
+     * <tt>[s, t, a, counter, funtions]</tt>.
      *
      * <p>Note that this method can usefully be applied to sublists to
      * move one or more elements within a list while preserving the
      * order of the remaining elements.  For example, the following idiom
      * moves the element at index <tt>j</tt> forward to position
-     * <tt>funs</tt> (which must be greater than or equal to <tt>j</tt>):
+     * <tt>funtions</tt> (which must be greater than or equal to <tt>j</tt>):
      * <pre>
-     *     Collections.rotate(list.subList(j, funs+1), -1);
+     *     Collections.rotate(list.subList(j, funtions+1), -1);
      * </pre>
      * To make this concrete, suppose <tt>list</tt> comprises
      * <tt>[a, b, c, d, e]</tt>.  To move the element at index <tt>1</tt>
