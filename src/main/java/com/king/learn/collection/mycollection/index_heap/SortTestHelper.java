@@ -21,7 +21,7 @@ public class SortTestHelper {
     }
 
     // 生成一个近乎有序的数组
-    // 首先生成一个含有[0...n-1]的完全有序数组, 之后随机交换swapTimes对数据
+    // 首先生成一个含有[0...counter-1]的完全有序数组, 之后随机交换swapTimes对数据
     // swapTimes定义了数组的无序程度:
     // swapTimes == 0 时, 数组完全有序
     // swapTimes 越大, 数组越趋向于无序

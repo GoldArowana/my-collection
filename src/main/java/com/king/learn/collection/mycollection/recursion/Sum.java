@@ -6,7 +6,7 @@ public class Sum {
         return sum(arr, 0);
     }
 
-    // 计算arr[l...n)这个区间内所有数字的和
+    // 计算arr[l...counter)这个区间内所有数字的和
     private static int sum(int[] arr, int l) {
         if (l == arr.length)
             return 0;

@@ -308,7 +308,7 @@ class Solution {
         private void siftDown(int k) {
 
             while (leftChild(k) < data.getSize()) {
-                int j = leftChild(k); // 在此轮循环中,data[k]和data[j]交换位置
+                int j = leftChild(k); // 在此轮循环中,data[funtions]和data[j]交换位置
                 if (j + 1 < data.getSize() &&
                         data.get(j + 1).compareTo(data.get(j)) > 0)
                     j++;

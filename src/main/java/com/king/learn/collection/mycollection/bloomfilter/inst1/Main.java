@@ -12,7 +12,6 @@ public class Main {
         System.out.println(fileter.addIfAbsent("1111111111111"));
         fileter.saveFilterToFile("/Users/arowana/Desktop/1.txt");
         fileter = fileter.readFilterFromFile("/Users/arowana/Desktop/1.txt");
-        System.out.println(fileter.getRate());
         System.out.println(fileter.addIfAbsent("1111111111111"));
     }
 }

@@ -263,11 +263,13 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
         protected final boolean tryRelease(int releases) {
             if (!isHeldExclusively()) throw new IllegalMonitorStateException();
             int nextc = getState() - releases;
+            // 如果是free==0, 那么说明锁可以释放干净了 (本场景下free是0)
             boolean free = exclusiveCount(nextc) == 0;
             // 如果个数是0, 那么就把持有线程设置为null, 意味着彻底释放锁
             //(如果不是0, 那就说明刚刚只是退出了一层重入)
             if (free) setExclusiveOwnerThread(null);
             setState(nextc);
+            // return true;
             return free;
         }
 
@@ -395,7 +397,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
             // 读锁的state
             int r = sharedCount(c);
 
-            // 读锁获取是否需要被阻塞
+            // 读锁获取是否应该被阻塞
             if (!readerShouldBlock() &&
                     // 判断是否会溢出 (2^16-1)
                     r < MAX_COUNT &&
@@ -406,7 +408,7 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
                  *  进到这里就是获取到了读锁
                  * ----------------------*/
 
-                // r == 0 说明此线程是第一个获取读锁的，或者说在它前面获取读锁的都走光光了，它也算是第一个吧
+                // r == 0 说明此线程是第一个获取读锁的，或者说在它之前来的读锁的都走光了
                 if (r == 0) {
                     // 记录 firstReader 为当前线程
                     firstReader = current;

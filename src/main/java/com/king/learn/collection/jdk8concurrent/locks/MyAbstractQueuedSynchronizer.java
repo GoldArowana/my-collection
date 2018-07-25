@@ -504,7 +504,7 @@ public abstract class MyAbstractQueuedSynchronizer {
             // 如果锁没有嵌套的了, 可以完全释放了的话, 就会进入到这个if中
             // 2. 如果独占锁释放"完全"，唤醒后继节点
             Node h = head;
-            // 唤醒下一个等待的线程
+            // 如果还有等待获取锁的线程, 那么唤醒下一个等待的线程
             if (h != null && h.waitStatus != 0)
                 unparkSuccessor(h);
             return true;

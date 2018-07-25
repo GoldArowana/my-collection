@@ -15,7 +15,7 @@ public class MinHeap<Item extends Comparable> {
     }
 
     // 构造函数, 通过一个给定数组创建一个最小堆
-    // 该构造堆的过程, 时间复杂度为O(n)
+    // 该构造堆的过程, 时间复杂度为O(counter)
     public MinHeap(Item arr[]) {
 
         int n = arr.length;
@@ -112,10 +112,10 @@ public class MinHeap<Item extends Comparable> {
     private void shiftDown(int k) {
 
         while (2 * k <= count) {
-            int j = 2 * k; // 在此轮循环中,data[k]和data[j]交换位置
+            int j = 2 * k; // 在此轮循环中,data[funtions]和data[j]交换位置
             if (j + 1 <= count && data[j + 1].compareTo(data[j]) < 0)
                 j++;
-            // data[j] 是 data[2*k]和data[2*k+1]中的最小值
+            // data[j] 是 data[2*funtions]和data[2*funtions+1]中的最小值
 
             if (data[k].compareTo(data[j]) <= 0) break;
             swap(k, j);

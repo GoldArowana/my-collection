@@ -15,7 +15,7 @@ public class BloomFilter implements Serializable {
 
     private static final long serialVersionUID = 4422582596265897335L;
     private final int size;
-    private final BitSet notebook;
+    private final BitSet bits;
     private final int[] seeds;
     private final AtomicInteger counter;
     private final Double autoClearRate;
@@ -55,7 +55,7 @@ public class BloomFilter implements Serializable {
         // 设置
         seeds = rate.getSeeds();
         size = (int) bitSize;
-        notebook = new BitSet(size);
+        bits = new BitSet(size);
         this.autoClearRate = autoClearRate;
     }
 
@@ -83,7 +83,7 @@ public class BloomFilter implements Serializable {
      * @implNote 清空位图和计数器
      */
     public boolean clear() {
-        this.notebook.clear();
+        this.bits.clear();
         this.counter.set(0);
         return true;
     }
@@ -127,7 +127,7 @@ public class BloomFilter implements Serializable {
      * @implNote 将位图中index位置设置为1.然后计数器+1
      */
     private void setTrue(int index) {
-        notebook.set(index, true);
+        bits.set(index, true);
         counter.incrementAndGet();
     }
 
@@ -141,7 +141,7 @@ public class BloomFilter implements Serializable {
 
     public boolean contains(String data) {
         for (int seed : seeds)
-            if (!notebook.get(hash(data, seed)))
+            if (!bits.get(hash(data, seed)))
                 return false;
         return true;
     }

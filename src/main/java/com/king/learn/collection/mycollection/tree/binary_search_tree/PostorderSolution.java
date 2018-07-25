@@ -7,7 +7,7 @@ import java.util.List;
 
 // Morris PostOrder Traversal
 //
-// Time Complexity: O(n)
+// Time Complexity: O(counter)
 // Space Complexity: O(1)
 public class PostorderSolution {
 

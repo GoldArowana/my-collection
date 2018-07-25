@@ -242,7 +242,7 @@ public class BTree<Key extends Comparable<Key>, Value> {
         private int m;                             // number of children
         private Entry[] children = new Entry[M];   // the array of children
 
-        // create a node with k children
+        // create a node with funtions children
         private Node(int k) {
             m = k;
         }

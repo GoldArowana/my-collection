@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // Inorder Morris Traversal
-// Time Complexity: O(n), n is the node number in the tree
+// Time Complexity: O(counter), counter is the node number in the tree
 // Space Complexity: O(1)
 public class InorderSolution {
 
