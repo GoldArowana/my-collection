@@ -1100,15 +1100,20 @@ public abstract class MyAbstractQueuedSynchronizer {
      * @param arg the acquire argument
      */
     private void doAcquireShared(int arg) {
+        // 将节点放入`等待队列`
         final Node node = addWaiter(Node.SHARED);
         boolean failed = true;
         try {
             boolean interrupted = false;
             for (; ; ) {
                 final Node p = node.predecessor();
+                // 判断当前是不是等待队列中的第一个
                 if (p == head) {
+                    // 尝试获取锁
                     int r = tryAcquireShared(arg);
                     if (r >= 0) {
+                        // 把自己设置为新的头部, 然后看看是否需要向后续蔓延
+                        // (也就是, 如果是Shared模式, 那么就会把后续连续的读锁线程都唤醒)
                         setHeadAndPropagate(node, r);
                         p.next = null; // help GC
                         if (interrupted)
