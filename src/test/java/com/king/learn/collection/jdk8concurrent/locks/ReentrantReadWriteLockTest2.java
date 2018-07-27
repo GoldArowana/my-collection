@@ -15,21 +15,13 @@ public class ReentrantReadWriteLockTest2 {
 
     public static void main(String[] args) {
         for (Map.Entry<String, Lock> entry : new HashMap<String, Lock>() {{
-            put("r1", readLock);
-            put("r2", readLock);
-            put("r3", readLock);
-            put("w1", writeLock);
-            put("w2", writeLock);
-            put("w3", writeLock);
+            for (int i = 0; i < 10; i++) {
+                put("r" + i, readLock);
+                put("w" + i, writeLock);
+            }
         }}.entrySet()) {
             new Thread(() -> func(entry::getValue, entry.getKey())).start();
         }
-
-        // 下面这四行, 等价于上面的for循环.
-//        new Thread(() -> func(() -> readLock, "r1")).start();
-//        new Thread(() -> func(() -> readLock, "r2")).start();
-//        new Thread(() -> func(() -> writeLock, "w1")).start();
-//        new Thread(() -> func(() -> writeLock, "w2")).start();
 
         while (scanner.hasNext()) {
             cmd = scanner.nextLine();
