@@ -3,7 +3,7 @@ package com.king.learn.collection.jdk8concurrent.locks;
 import java.util.Scanner;
 import java.util.function.Supplier;
 
-public class Main {
+public class ReentrantLockTest3 {
     static final Scanner scanner = new Scanner(System.in);
     static volatile String cmd = "";
     private static MyReentrantLock lock = new MyReentrantLock(true);
