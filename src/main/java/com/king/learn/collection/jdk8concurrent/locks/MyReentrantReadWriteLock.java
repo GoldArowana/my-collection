@@ -431,7 +431,6 @@ public class MyReentrantReadWriteLock implements ReadWriteLock {
                             rh.tid != getThreadId(current))
                         // 设置为缓存当前线程的 HoldCounter
                         cachedHoldCounter = rh = readHolds.get();
-
                         // cachedHoldCounter 缓存的是当前线程，但是 count 为 0，
                     else if (rh.count == 0)
                         // 大家可以思考一下：这里为什么要 set ThreadLocal 呢？(当然，答案肯定不在这块代码中)
