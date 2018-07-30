@@ -147,7 +147,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
     /**
      * Applies a supplemental hash function to a given hashCode, which defends
      * against poor quality hash functions. This is critical because
-     * ConcurrentHashMap uses power-of-two length hash tables, that otherwise
+     * MyConcurrentHashMap uses power-of-two length hash tables, that otherwise
      * encounter collisions for hashCodes that do not differ in lower or upper
      * bits.
      */
@@ -538,7 +538,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
     }
 
     /**
-     * Save the state of the <tt>ConcurrentHashMap</tt> instance to a stream
+     * Save the state of the <tt>MyConcurrentHashMap</tt> instance to a stream
      * (i.e., serialize it).
      *
      * @param s the stream
@@ -569,7 +569,7 @@ public class ConcurrentLRUHashMap<K, V> extends AbstractMap<K, V> implements
     }
 
     /**
-     * Reconstitute the <tt>ConcurrentHashMap</tt> instance from a stream (i.e.,
+     * Reconstitute the <tt>MyConcurrentHashMap</tt> instance from a stream (i.e.,
      * deserialize it).
      *
      * @param s the stream
