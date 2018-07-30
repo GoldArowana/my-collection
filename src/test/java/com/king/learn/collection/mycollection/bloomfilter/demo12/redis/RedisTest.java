@@ -143,7 +143,7 @@ public class RedisTest {
         int ops = 1000;
         begin = System.currentTimeMillis();
         for (int i = 0; i < ops; i++) {
-            jedis.set("fastset" + i, "val");
+            jedis.set("fastset" + i, "value");
         }
         end = System.currentTimeMillis();
         System.out.print(ops + " set operations: ");
