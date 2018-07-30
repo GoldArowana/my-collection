@@ -1,5 +1,7 @@
 package com.king.learn.collection.jdk8concurrent.collection;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import sun.misc.Unsafe;
 
 import java.io.ObjectStreamField;
@@ -389,7 +391,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     static <K, V> Node<K, V> untreeify(Node<K, V> b) {
         Node<K, V> hd = null, tl = null;
         for (Node<K, V> q = b; q != null; q = q.next) {
-            Node<K, V> p = new Node<K, V>(q.hash, q.key, q.val, null);
+            Node<K, V> p = new Node<K, V>(q.hash, q.key, q.value, null);
             if (tl == null)
                 hd = p;
             else
@@ -440,16 +442,16 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             // 判断头结点是否就是我们需要的节点
             if ((eh = e.hash) == h) {
                 if ((ek = e.key) == key || (ek != null && key.equals(ek)))
-                    return e.val;
+                    return e.value;
                 // 如果头结点的 hash 小于 0，说明 正在扩容，或者该位置是红黑树
             } else if (eh < 0)
                 // 参考 ForwardingNode.find(int h, Object k) 和 TreeBin.find(int h, Object k)
-                return (p = e.find(h, key)) != null ? p.val : null;
+                return (p = e.find(h, key)) != null ? p.value : null;
             // 遍历链表
             while ((e = e.next) != null) {
                 if (e.hash == h &&
                         ((ek = e.key) == key || (ek != null && key.equals(ek))))
-                    return e.val;
+                    return e.value;
             }
         }
         return null;
@@ -473,7 +475,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
             for (Node<K, V> p; (p = it.advance()) != null; ) {
                 V v;
-                if ((v = p.val) == value || (v != null && value.equals(v)))
+                if ((v = p.value) == value || (v != null && value.equals(v)))
                     return true;
             }
         }
@@ -542,10 +544,10 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 if (e.hash == hash &&
                                         ((ek = e.key) == key ||
                                                 (ek != null && key.equals(ek)))) {
-                                    oldVal = e.val;
+                                    oldVal = e.value;
                                     // 判断onlyIfAbsent，即是否不存在才插入。如果是不存在的时候才插入，则略过不更新
                                     if (!onlyIfAbsent)
-                                        e.val = value;
+                                        e.value = value;
                                     break;
                                 }
                                 // 到了链表的最末端，将这个新值放到链表的最后面
@@ -564,9 +566,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             // 调用红黑树的插值方法插入新节点
                             if ((p = ((TreeBin<K, V>) f).putTreeVal(hash, key,
                                     value)) != null) {
-                                oldVal = p.val;
+                                oldVal = p.value;
                                 if (!onlyIfAbsent)
-                                    p.val = value;
+                                    p.value = value;
                             }
                         }
                     }
@@ -634,12 +636,12 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 if (e.hash == hash &&
                                         ((ek = e.key) == key ||
                                                 (ek != null && key.equals(ek)))) {
-                                    V ev = e.val;
+                                    V ev = e.value;
                                     if (cv == null || cv == ev ||
                                             (ev != null && cv.equals(ev))) {
                                         oldVal = ev;
                                         if (value != null)
-                                            e.val = value;
+                                            e.value = value;
                                         else if (pred != null)
                                             pred.next = e.next;
                                         else
@@ -657,12 +659,12 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             TreeNode<K, V> r, p;
                             if ((r = t.root) != null &&
                                     (p = r.findTreeNode(hash, key, null)) != null) {
-                                V pv = p.val;
+                                V pv = p.value;
                                 if (cv == null || cv == pv ||
                                         (pv != null && cv.equals(pv))) {
                                     oldVal = pv;
                                     if (value != null)
-                                        p.val = value;
+                                        p.value = value;
                                     else if (t.removeTreeNode(p))
                                         setTabAt(tab, i, untreeify(t.first));
                                 }
@@ -752,7 +754,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         if ((t = table) != null) {
             Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
             for (Node<K, V> p; (p = it.advance()) != null; )
-                h += p.key.hashCode() ^ p.val.hashCode();
+                h += p.key.hashCode() ^ p.value.hashCode();
         }
         return h;
     }
@@ -778,7 +780,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         if ((p = it.advance()) != null) {
             for (; ; ) {
                 K k = p.key;
-                V v = p.val;
+                V v = p.value;
                 sb.append(k == this ? "(this Map)" : k);
                 sb.append('=');
                 sb.append(v == this ? "(this Map)" : v);
@@ -802,7 +804,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             int f = (t = table) == null ? 0 : t.length;
             Traverser<K, V> it = new Traverser<K, V>(t, f, 0, f);
             for (Node<K, V> p; (p = it.advance()) != null; ) {
-                V val = p.val;
+                V val = p.value;
                 Object v = m.get(p.key);
                 if (v == null || (v != val && !v.equals(val)))
                     return false;
@@ -820,14 +822,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Saves the state of the {@code MyConcurrentHashMap} instance to a
-     * stream (i.e., serializes it).
-     *
-     * @param s the stream
-     * @throws java.io.IOException if an I/O error occurs
-     * @serialData the key (Object) and value (Object)
-     * for each key-value mapping, followed by a null pair.
-     * The key-value mappings are emitted in no particular order.
+     * 序列化
+     * TODO
      */
     private void writeObject(java.io.ObjectOutputStream s)
             throws java.io.IOException {
@@ -842,8 +838,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         int segmentShift = 32 - sshift;
         int segmentMask = ssize - 1;
         @SuppressWarnings("unchecked")
-        Segment<K, V>[] segments = (Segment<K, V>[])
-                new Segment<?, ?>[DEFAULT_CONCURRENCY_LEVEL];
+        Segment<K, V>[] segments = (Segment<K, V>[]) new Segment<?, ?>[DEFAULT_CONCURRENCY_LEVEL];
         for (int i = 0; i < segments.length; ++i)
             segments[i] = new Segment<K, V>(LOAD_FACTOR);
         s.putFields().put("segments", segments);
@@ -856,7 +851,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
             for (Node<K, V> p; (p = it.advance()) != null; ) {
                 s.writeObject(p.key);
-                s.writeObject(p.val);
+                s.writeObject(p.value);
             }
         }
         s.writeObject(null);
@@ -865,12 +860,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Reconstitutes the instance from a stream (that is, deserializes it).
-     *
-     * @param s the stream
-     * @throws ClassNotFoundException if the class of a serialized object
-     *                                could not be found
-     * @throws java.io.IOException    if an I/O error occurs
+     * 反序列化
+     * TODO
      */
     private void readObject(java.io.ObjectInputStream s)
             throws java.io.IOException, ClassNotFoundException {
@@ -920,7 +911,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                     K k = p.key;
                     if (first.hash < 0) {
                         TreeBin<K, V> t = (TreeBin<K, V>) first;
-                        if (t.putTreeVal(h, k, p.val) == null)
+                        if (t.putTreeVal(h, k, p.value) == null)
                             ++added;
                         insertAtFront = false;
                     } else {
@@ -944,7 +935,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             TreeNode<K, V> hd = null, tl = null;
                             for (q = p; q != null; q = q.next) {
                                 TreeNode<K, V> t = new TreeNode<K, V>
-                                        (q.hash, q.key, q.val, null, null);
+                                        (q.hash, q.key, q.value, null, null);
                                 if ((t.prev = tl) == null)
                                     hd = t;
                                 else
@@ -1017,7 +1008,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         if ((t = table) != null) {
             Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
             for (Node<K, V> p; (p = it.advance()) != null; ) {
-                action.accept(p.key, p.val);
+                action.accept(p.key, p.value);
             }
         }
     }
@@ -1032,7 +1023,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         if ((t = table) != null) {
             Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
             for (Node<K, V> p; (p = it.advance()) != null; ) {
-                V oldValue = p.val;
+                V oldValue = p.value;
                 for (K key = p.key; ; ) {
                     V newValue = function.apply(key, oldValue);
                     if (newValue == null)
@@ -1108,7 +1099,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 if (e.hash == h &&
                                         ((ek = e.key) == key ||
                                                 (ek != null && key.equals(ek)))) {
-                                    val = e.val;
+                                    val = e.value;
                                     break;
                                 }
                                 Node<K, V> pred = e;
@@ -1126,7 +1117,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             TreeNode<K, V> r, p;
                             if ((r = t.root) != null &&
                                     (p = r.findTreeNode(h, key, null)) != null)
-                                val = p.val;
+                                val = p.value;
                             else if ((val = mappingFunction.apply(key)) != null) {
                                 added = true;
                                 t.putTreeVal(h, key, val);
@@ -1194,9 +1185,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 if (e.hash == h &&
                                         ((ek = e.key) == key ||
                                                 (ek != null && key.equals(ek)))) {
-                                    val = remappingFunction.apply(key, e.val);
+                                    val = remappingFunction.apply(key, e.value);
                                     if (val != null)
-                                        e.val = val;
+                                        e.value = val;
                                     else {
                                         delta = -1;
                                         Node<K, V> en = e.next;
@@ -1217,9 +1208,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             TreeNode<K, V> r, p;
                             if ((r = t.root) != null &&
                                     (p = r.findTreeNode(h, key, null)) != null) {
-                                val = remappingFunction.apply(key, p.val);
+                                val = remappingFunction.apply(key, p.value);
                                 if (val != null)
-                                    p.val = val;
+                                    p.value = val;
                                 else {
                                     delta = -1;
                                     if (t.removeTreeNode(p))
@@ -1300,9 +1291,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 if (e.hash == h &&
                                         ((ek = e.key) == key ||
                                                 (ek != null && key.equals(ek)))) {
-                                    val = remappingFunction.apply(key, e.val);
+                                    val = remappingFunction.apply(key, e.value);
                                     if (val != null)
-                                        e.val = val;
+                                        e.value = val;
                                     else {
                                         delta = -1;
                                         Node<K, V> en = e.next;
@@ -1332,11 +1323,11 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 p = r.findTreeNode(h, key, null);
                             else
                                 p = null;
-                            V pv = (p == null) ? null : p.val;
+                            V pv = (p == null) ? null : p.value;
                             val = remappingFunction.apply(key, pv);
                             if (val != null) {
                                 if (p != null)
-                                    p.val = val;
+                                    p.value = val;
                                 else {
                                     delta = 1;
                                     t.putTreeVal(h, key, val);
@@ -1411,9 +1402,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                 if (e.hash == h &&
                                         ((ek = e.key) == key ||
                                                 (ek != null && key.equals(ek)))) {
-                                    val = remappingFunction.apply(e.val, value);
+                                    val = remappingFunction.apply(e.value, value);
                                     if (val != null)
-                                        e.val = val;
+                                        e.value = val;
                                     else {
                                         delta = -1;
                                         Node<K, V> en = e.next;
@@ -1440,10 +1431,10 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             TreeNode<K, V> p = (r == null) ? null :
                                     r.findTreeNode(h, key, null);
                             val = (p == null) ? value :
-                                    remappingFunction.apply(p.val, value);
+                                    remappingFunction.apply(p.value, value);
                             if (val != null) {
                                 if (p != null)
-                                    p.val = val;
+                                    p.value = val;
                                 else {
                                     delta = 1;
                                     t.putTreeVal(h, key, val);
@@ -1513,15 +1504,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
 
     /**
-     * Returns a {@link Set} view of the keys in this map, using the
-     * given common mapped value for any additions (i.e., {@link
-     * Collection#add} and {@link Collection#addAll(Collection)}).
-     * This is of course only appropriate if it is acceptable to use
-     * the same value for all additions from this view.
-     *
-     * @param mappedValue the mapped value to use for any additions
-     * @return the set view
-     * @throws NullPointerException if the mappedValue is null
+     * 一个key集合视图. 给定了mappedValue.
+     * 在使用add或者addAll方法时, 只需要传入key,
+     * 就可以把key-mappedValue 插入到map中.
      */
     public KeySetView<K, V> keySet(V mappedValue) {
         if (mappedValue == null) throw new NullPointerException();
@@ -1529,9 +1514,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Initializes table, using the size recorded in sizeCtl.
-     * <p>
-     * sizeCtl在初始化期间设置为 -1，用于同步控制多线程同时进行初始化
+     * 初始化桶. sizeCtl在初始化期间设置为 -1，用于同步控制多线程同时进行初始化
+     * TODO
      */
     private final Node<K, V>[] initTable() {
         Node<K, V>[] tab;
@@ -1578,6 +1562,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *
      * @param x     the count to add
      * @param check if <0, don't check resize, if <= 1 only check if uncontended
+     *              <p>
+     *              TODO
      */
     private final void addCount(long x, int check) {
         CounterCell[] as;
@@ -1840,7 +1826,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             for (Node<K, V> p = f; p != lastRun; p = p.next) {
                                 int ph = p.hash;
                                 K pk = p.key;
-                                V pv = p.val;
+                                V pv = p.value;
                                 if ((ph & n) == 0)
                                     ln = new Node<K, V>(ph, pk, pv, ln);
                                 else
@@ -1864,7 +1850,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             for (Node<K, V> e = t.first; e != null; e = e.next) {
                                 int h = e.hash;
                                 TreeNode<K, V> p = new TreeNode<K, V>
-                                        (h, e.key, e.val, null, null);
+                                        (h, e.key, e.value, null, null);
                                 if ((h & n) == 0) {
                                     if ((p.prev = loTail) == null)
                                         lo = p;
@@ -1902,6 +1888,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
+    /**
+     * @return map中k-v的个数
+     */
     final long sumCount() {
         CounterCell[] as = counterCells;
         CounterCell a;
@@ -2020,7 +2009,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                         TreeNode<K, V> hd = null, tl = null;
                         for (Node<K, V> e = b; e != null; e = e.next) {
                             TreeNode<K, V> p =
-                                    new TreeNode<K, V>(e.hash, e.key, e.val,
+                                    new TreeNode<K, V>(e.hash, e.key, e.value,
                                             null, null);
                             if ((p.prev = tl) == null)
                                 hd = p;
@@ -2778,40 +2767,22 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Key-value entry.  This class is never exported out as a
-     * user-mutable Map.Entry (i.e., one supporting setValue; see
-     * MapEntry below), but can be used for read-only traversals used
-     * in bulk tasks.  Subclasses of Node with a negative hash field
-     * are special, and contain null keys and values (but are never
-     * exported).  Otherwise, keys and vals are never null.
+     * Node节点
      */
+    @Getter
+    @AllArgsConstructor
     static class Node<K, V> implements Entry<K, V> {
         final int hash;
         final K key;
-        volatile V val;
+        volatile V value;
         volatile Node<K, V> next;
 
-        Node(int hash, K key, V val, Node<K, V> next) {
-            this.hash = hash;
-            this.key = key;
-            this.val = val;
-            this.next = next;
-        }
-
-        public final K getKey() {
-            return key;
-        }
-
-        public final V getValue() {
-            return val;
-        }
-
         public final int hashCode() {
-            return key.hashCode() ^ val.hashCode();
+            return key.hashCode() ^ value.hashCode();
         }
 
         public final String toString() {
-            return key + "=" + val;
+            return key + "=" + value;
         }
 
         public final V setValue(V value) {
@@ -2825,7 +2796,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                     (k = (e = (Entry<?, ?>) o).getKey()) != null &&
                     (v = e.getValue()) != null &&
                     (k == key || k.equals(key)) &&
-                    (v == (u = val) || v.equals(u)));
+                    (v == (u = value) || v.equals(u)));
         }
 
         /**
@@ -2860,6 +2831,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * A node inserted at head of bins during transfer operations.
+     * <p>
+     * TODO
      */
     static final class ForwardingNode<K, V> extends Node<K, V> {
         final Node<K, V>[] nextTable;
@@ -2899,7 +2872,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * A place-holder node used in computeIfAbsent and compute
+     * A place-holder node , used in computeIfAbsent and compute
      */
     static final class ReservationNode<K, V> extends Node<K, V> {
         ReservationNode() {
@@ -2925,7 +2898,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Nodes for use in TreeBins
+     * 红黑树节点
      */
     static final class TreeNode<K, V> extends Node<K, V> {
         TreeNode<K, V> parent;  // red-black tree links
@@ -2934,8 +2907,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         TreeNode<K, V> prev;    // needed to unlink next upon deletion
         boolean red;
 
-        TreeNode(int hash, K key, V val, Node<K, V> next,
-                 TreeNode<K, V> parent) {
+        TreeNode(int hash, K key, V val, Node<K, V> next, TreeNode<K, V> parent) {
             super(hash, key, val, next);
             this.parent = parent;
         }
@@ -2945,8 +2917,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
 
         /**
-         * Returns the TreeNode (or null if not found) for the given key
-         * starting at given root.
+         * Returns the TreeNode (or null if not found) for the given key starting at given root.
+         * <p>
+         * 从k节点开始, 根据key寻找, 并返回
          */
         final TreeNode<K, V> findTreeNode(int h, Object k, Class<?> kc) {
             if (k != null) {
@@ -2997,10 +2970,13 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
         static {
             try {
-                U = sun.misc.Unsafe.getUnsafe();
+                // 通过反射获得unsafe实例.
+                Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
+                theUnsafe.setAccessible(true);
+                U = (Unsafe) theUnsafe.get(null);
+
                 Class<?> k = TreeBin.class;
-                LOCKSTATE = U.objectFieldOffset
-                        (k.getDeclaredField("lockState"));
+                LOCKSTATE = U.objectFieldOffset(k.getDeclaredField("lockState"));
             } catch (Exception e) {
                 throw new Error(e);
             }
@@ -3700,7 +3676,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             Node<K, V> p;
             if ((p = next) == null)
                 throw new NoSuchElementException();
-            V v = p.val;
+            V v = p.value;
             lastReturned = p;
             advance();
             return v;
@@ -3723,7 +3699,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             if ((p = next) == null)
                 throw new NoSuchElementException();
             K k = p.key;
-            V v = p.val;
+            V v = p.value;
             lastReturned = p;
             advance();
             return new MapEntry<K, V>(k, v, map);
@@ -3849,7 +3825,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         public void forEachRemaining(Consumer<? super V> action) {
             if (action == null) throw new NullPointerException();
             for (Node<K, V> p; (p = advance()) != null; )
-                action.accept(p.val);
+                action.accept(p.value);
         }
 
         public boolean tryAdvance(Consumer<? super V> action) {
@@ -3857,7 +3833,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             Node<K, V> p;
             if ((p = advance()) == null)
                 return false;
-            action.accept(p.val);
+            action.accept(p.value);
             return true;
         }
 
@@ -3892,7 +3868,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         public void forEachRemaining(Consumer<? super Entry<K, V>> action) {
             if (action == null) throw new NullPointerException();
             for (Node<K, V> p; (p = advance()) != null; )
-                action.accept(new MapEntry<K, V>(p.key, p.val, map));
+                action.accept(new MapEntry<K, V>(p.key, p.value, map));
         }
 
         public boolean tryAdvance(Consumer<? super Entry<K, V>> action) {
@@ -3900,7 +3876,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             Node<K, V> p;
             if ((p = advance()) == null)
                 return false;
-            action.accept(new MapEntry<K, V>(p.key, p.val, map));
+            action.accept(new MapEntry<K, V>(p.key, p.value, map));
             return true;
         }
 
@@ -4279,7 +4255,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             if ((t = map.table) != null) {
                 Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
                 for (Node<K, V> p; (p = it.advance()) != null; )
-                    action.accept(p.val);
+                    action.accept(p.value);
             }
         }
     }
@@ -4372,7 +4348,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             if ((t = map.table) != null) {
                 Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
                 for (Node<K, V> p; (p = it.advance()) != null; )
-                    action.accept(new MapEntry<K, V>(p.key, p.val, map));
+                    action.accept(new MapEntry<K, V>(p.key, p.value, map));
             }
         }
 
@@ -4530,7 +4506,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     action).fork();
                 }
                 for (Node<K, V> p; (p = advance()) != null; )
-                    action.accept(p.val);
+                    action.accept(p.value);
                 propagateCompletion();
             }
         }
@@ -4588,7 +4564,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     action).fork();
                 }
                 for (Node<K, V> p; (p = advance()) != null; )
-                    action.accept(p.key, p.val);
+                    action.accept(p.key, p.value);
                 propagateCompletion();
             }
         }
@@ -4658,7 +4634,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 }
                 for (Node<K, V> p; (p = advance()) != null; ) {
                     U u;
-                    if ((u = transformer.apply(p.val)) != null)
+                    if ((u = transformer.apply(p.value)) != null)
                         action.accept(u);
                 }
                 propagateCompletion();
@@ -4731,7 +4707,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 }
                 for (Node<K, V> p; (p = advance()) != null; ) {
                     U u;
-                    if ((u = transformer.apply(p.key, p.val)) != null)
+                    if ((u = transformer.apply(p.key, p.value)) != null)
                         action.accept(u);
                 }
                 propagateCompletion();
@@ -4829,7 +4805,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                         propagateCompletion();
                         break;
                     }
-                    if ((u = searchFunction.apply(p.val)) != null) {
+                    if ((u = searchFunction.apply(p.value)) != null) {
                         if (result.compareAndSet(null, u))
                             quietlyCompleteRoot();
                         break;
@@ -4929,7 +4905,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                         propagateCompletion();
                         break;
                     }
-                    if ((u = searchFunction.apply(p.key, p.val)) != null) {
+                    if ((u = searchFunction.apply(p.key, p.value)) != null) {
                         if (result.compareAndSet(null, u))
                             quietlyCompleteRoot();
                         break;
@@ -5025,7 +5001,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 }
                 V r = null;
                 for (Node<K, V> p; (p = advance()) != null; ) {
-                    V v = p.val;
+                    V v = p.value;
                     r = (r == null) ? v : reducer.apply(r, v);
                 }
                 result = r;
@@ -5197,7 +5173,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 U r = null;
                 for (Node<K, V> p; (p = advance()) != null; ) {
                     U u;
-                    if ((u = transformer.apply(p.val)) != null)
+                    if ((u = transformer.apply(p.value)) != null)
                         r = (r == null) ? u : reducer.apply(r, u);
                 }
                 result = r;
@@ -5317,7 +5293,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 U r = null;
                 for (Node<K, V> p; (p = advance()) != null; ) {
                     U u;
-                    if ((u = transformer.apply(p.key, p.val)) != null)
+                    if ((u = transformer.apply(p.key, p.value)) != null)
                         r = (r == null) ? u : reducer.apply(r, u);
                 }
                 result = r;
@@ -5436,7 +5412,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     rights, transformer, r, reducer)).fork();
                 }
                 for (Node<K, V> p; (p = advance()) != null; )
-                    r = reducer.applyAsDouble(r, transformer.applyAsDouble(p.val));
+                    r = reducer.applyAsDouble(r, transformer.applyAsDouble(p.value));
                 result = r;
                 CountedCompleter<?> c;
                 for (c = firstComplete(); c != null; c = c.nextComplete()) {
@@ -5550,7 +5526,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     rights, transformer, r, reducer)).fork();
                 }
                 for (Node<K, V> p; (p = advance()) != null; )
-                    r = reducer.applyAsDouble(r, transformer.applyAsDouble(p.key, p.val));
+                    r = reducer.applyAsDouble(r, transformer.applyAsDouble(p.key, p.value));
                 result = r;
                 CountedCompleter<?> c;
                 for (c = firstComplete(); c != null; c = c.nextComplete()) {
@@ -5664,7 +5640,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     rights, transformer, r, reducer)).fork();
                 }
                 for (Node<K, V> p; (p = advance()) != null; )
-                    r = reducer.applyAsLong(r, transformer.applyAsLong(p.val));
+                    r = reducer.applyAsLong(r, transformer.applyAsLong(p.value));
                 result = r;
                 CountedCompleter<?> c;
                 for (c = firstComplete(); c != null; c = c.nextComplete()) {
@@ -5778,7 +5754,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     rights, transformer, r, reducer)).fork();
                 }
                 for (Node<K, V> p; (p = advance()) != null; )
-                    r = reducer.applyAsLong(r, transformer.applyAsLong(p.key, p.val));
+                    r = reducer.applyAsLong(r, transformer.applyAsLong(p.key, p.value));
                 result = r;
                 CountedCompleter<?> c;
                 for (c = firstComplete(); c != null; c = c.nextComplete()) {
@@ -5892,7 +5868,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     rights, transformer, r, reducer)).fork();
                 }
                 for (Node<K, V> p; (p = advance()) != null; )
-                    r = reducer.applyAsInt(r, transformer.applyAsInt(p.val));
+                    r = reducer.applyAsInt(r, transformer.applyAsInt(p.value));
                 result = r;
                 CountedCompleter<?> c;
                 for (c = firstComplete(); c != null; c = c.nextComplete()) {
@@ -6006,7 +5982,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     rights, transformer, r, reducer)).fork();
                 }
                 for (Node<K, V> p; (p = advance()) != null; )
-                    r = reducer.applyAsInt(r, transformer.applyAsInt(p.key, p.val));
+                    r = reducer.applyAsInt(r, transformer.applyAsInt(p.key, p.value));
                 result = r;
                 CountedCompleter<?> c;
                 for (c = firstComplete(); c != null; c = c.nextComplete()) {
