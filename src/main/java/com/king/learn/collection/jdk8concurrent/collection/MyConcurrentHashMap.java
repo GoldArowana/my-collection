@@ -18,6 +18,8 @@ import java.util.function.*;
 
 /**
  * https://blog.csdn.net/u011392897/article/details/60479937
+ * http://www.vccoo.com/v/s15knb
+ * https://blog.csdn.net/tianyuxingxuan/article/details/77446524
  */
 public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         implements ConcurrentMap<K, V>, Serializable {
@@ -211,7 +213,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * Table of counter cells. When non-null, size is a power of 2.
      */
     private transient volatile CounterCell[] counterCells;
-    // views
+    // views. 视图
     private transient KeySetView<K, V> keySet;
     private transient ValuesView<K, V> values;
 
@@ -414,6 +416,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * {@code funtions} to a value {@code v} such that {@code key.equals(funtions)},
      * then this method returns {@code v}; otherwise it returns
      * {@code null}.  (There can be at most one such mapping.)
+     *
      * @throws NullPointerException if the specified key is null
      */
     public V get(Object key) {
@@ -453,27 +456,14 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Tests if the specified object is a key in this table.
-     *
-     * @param key possible key
-     * @return {@code true} if and only if the specified object
-     * is a key in this table, as determined by the
-     * {@code equals} method; {@code false} otherwise
-     * @throws NullPointerException if the specified key is null
+     * 根据key查找元素是否存在.
      */
     public boolean containsKey(Object key) {
         return get(key) != null;
     }
 
     /**
-     * Returns {@code true} if this map maps one or more keys to the
-     * specified value. Note: This method may require a full traversal
-     * of the map, and is much slower than method {@code containsKey}.
-     *
-     * @param value value whose presence in this map is to be tested
-     * @return {@code true} if this map maps one or more keys to the
-     * specified value
-     * @throws NullPointerException if the specified value is null
+     * 根据value来找值
      */
     public boolean containsValue(Object value) {
         if (value == null)
@@ -491,17 +481,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Maps the specified key to the specified value in this table.
-     * Neither the key nor the value can be null.
-     *
-     * <p>The value can be retrieved by calling the {@code get} method
-     * with a key that is equal to the original key.
-     *
-     * @param key   key with which the specified value is to be associated
-     * @param value value to be associated with the specified key
-     * @return the previous value associated with {@code key}, or
-     * {@code null} if there was no mapping for {@code key}
-     * @throws NullPointerException if the specified key or value is null
+     * 通过调用putval来插入k-v
      */
     public V put(K key, V value) {
         return putVal(key, value, false);
@@ -509,6 +489,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Implementation for put and putIfAbsent
+     * TODO
      */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
         // key 和 value 均不能为 null
@@ -610,11 +591,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Copies all of the mappings from the specified map to this one.
-     * These mappings replace any mappings that this map had for any of the
-     * keys currently in the specified map.
-     *
-     * @param m mappings to be stored in this map
+     * 插入m中的所有元素.
      */
     public void putAll(Map<? extends K, ? extends V> m) {
         tryPresize(m.size());
@@ -622,16 +599,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             putVal(e.getKey(), e.getValue(), false);
     }
 
-    // ConcurrentMap methods
-
     /**
-     * Removes the key (and its corresponding value) from this map.
-     * This method does nothing if the key is not in the map.
-     *
-     * @param key the key that needs to be removed
-     * @return the previous value associated with {@code key}, or
-     * {@code null} if there was no mapping for {@code key}
-     * @throws NullPointerException if the specified key is null
+     * 通过调用replaceNode方法, 来根据key删除元素
      */
     public V remove(Object key) {
         return replaceNode(key, null, null);
@@ -641,6 +610,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * Implementation for the four public remove/replace methods:
      * Replaces node value with v, conditional upon match of cv if
      * non-null.  If resulting value is null, delete.
+     * TODO
      */
     final V replaceNode(Object key, V value, Object cv) {
         int hash = spread(key.hashCode());
@@ -715,6 +685,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Removes all of the mappings from this map.
+     * 清空amp
+     * TODO
      */
     public void clear() {
         long delta = 0L; // negative number of deletions
@@ -748,47 +720,15 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns a {@link Set} view of the keys contained in this map.
-     * The set is backed by the map, so changes to the map are
-     * reflected in the set, and vice-versa. The set supports element
-     * removal, which removes the corresponding mapping from this map,
-     * via the {@code Iterator.remove}, {@code Set.remove},
-     * {@code removeAll}, {@code retainAll}, and {@code clear}
-     * operations.  It does not support the {@code add} or
-     * {@code addAll} operations.
-     *
-     * <p>The view's iterators and spliterators are
-     * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
-     *
-     * <p>The view's {@code spliterator} reports {@link Spliterator#CONCURRENT},
-     * {@link Spliterator#DISTINCT}, and {@link Spliterator#NONNULL}.
-     *
-     * @return the set view
+     * 返回key集合的视图
      */
     public KeySetView<K, V> keySet() {
         KeySetView<K, V> ks;
         return (ks = keySet) != null ? ks : (keySet = new KeySetView<K, V>(this, null));
     }
 
-    // Overrides of JDK8+ Map extension method defaults
-
     /**
-     * Returns a {@link Collection} view of the values contained in this map.
-     * The collection is backed by the map, so changes to the map are
-     * reflected in the collection, and vice-versa.  The collection
-     * supports element removal, which removes the corresponding
-     * mapping from this map, via the {@code Iterator.remove},
-     * {@code Collection.remove}, {@code removeAll},
-     * {@code retainAll}, and {@code clear} operations.  It does not
-     * support the {@code add} or {@code addAll} operations.
-     *
-     * <p>The view's iterators and spliterators are
-     * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
-     *
-     * <p>The view's {@code spliterator} reports {@link Spliterator#CONCURRENT}
-     * and {@link Spliterator#NONNULL}.
-     *
-     * @return the collection view
+     * 返回value集合视图
      */
     public Collection<V> values() {
         ValuesView<K, V> vs;
@@ -796,21 +736,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns a {@link Set} view of the mappings contained in this map.
-     * The set is backed by the map, so changes to the map are
-     * reflected in the set, and vice-versa.  The set supports element
-     * removal, which removes the corresponding mapping from the map,
-     * via the {@code Iterator.remove}, {@code Set.remove},
-     * {@code removeAll}, {@code retainAll}, and {@code clear}
-     * operations.
-     *
-     * <p>The view's iterators and spliterators are
-     * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
-     *
-     * <p>The view's {@code spliterator} reports {@link Spliterator#CONCURRENT},
-     * {@link Spliterator#DISTINCT}, and {@link Spliterator#NONNULL}.
-     *
-     * @return the set view
+     * 返回k-v集合视图
      */
     public Set<Entry<K, V>> entrySet() {
         EntrySetView<K, V> es;
@@ -818,11 +744,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns the hash code value for this {@link Map}, i.e.,
-     * the sum of, for each key-value pair in the map,
-     * {@code key.hashCode() ^ value.hashCode()}.
-     *
-     * @return the hash code value for this map
+     * @return 当前map的hashCode值
      */
     public int hashCode() {
         int h = 0;
@@ -844,7 +766,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * followed by an equals sign ("{@code =}") followed by the
      * associated value.
      *
-     * @return a string representation of this map
+     * @return 当前map的string表达式.
      */
     public String toString() {
         Node<K, V>[] t;
@@ -869,14 +791,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Compares the specified object with this map for equality.
-     * Returns {@code true} if the given object is a map with the same
-     * mappings as this map.  This operation may return misleading
-     * results if either map is concurrently modified during execution
-     * of this method.
-     *
-     * @param o object to be compared for equality with this map
-     * @return {@code true} if the specified object is equal to this map
+     * 比较当前的map和o是否相等.
      */
     public boolean equals(Object o) {
         if (o != this) {
@@ -1053,72 +968,49 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-    // Hashtable legacy methods
-
     /**
-     * {@inheritDoc}
-     *
-     * @return the previous value associated with the specified key,
-     * or {@code null} if there was no mapping for the key
-     * @throws NullPointerException if the specified key or value is null
+     * 如果map里没有这个key, 那么就插入value
      */
     public V putIfAbsent(K key, V value) {
         return putVal(key, value, true);
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @throws NullPointerException if the specified key is null
+     * 根据k-v删除元素
      */
     public boolean remove(Object key, Object value) {
-        if (key == null)
-            throw new NullPointerException();
+        if (key == null) throw new NullPointerException();
         return value != null && replaceNode(key, null, value) != null;
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @throws NullPointerException if any of the arguments are null
+     * 将key的oldValue更新为newValue
      */
     public boolean replace(K key, V oldValue, V newValue) {
-        if (key == null || oldValue == null || newValue == null)
-            throw new NullPointerException();
+        if (key == null || oldValue == null || newValue == null) throw new NullPointerException();
         return replaceNode(key, newValue, oldValue) != null;
     }
 
-    // MyConcurrentHashMap-only methods
-
     /**
-     * {@inheritDoc}
-     *
-     * @return the previous value associated with the specified key,
-     * or {@code null} if there was no mapping for the key
-     * @throws NullPointerException if the specified key or value is null
+     * 将key的值更新为value
      */
     public V replace(K key, V value) {
-        if (key == null || value == null)
-            throw new NullPointerException();
+        if (key == null || value == null) throw new NullPointerException();
         return replaceNode(key, value, null);
     }
 
     /**
-     * Returns the value to which the specified key is mapped, or the
-     * given default value if this map contains no mapping for the
-     * key.
-     *
-     * @param key          the key whose associated value is to be returned
-     * @param defaultValue the value to return if this map contains
-     *                     no mapping for the given key
-     * @return the mapping for the key, if present; else the default value
-     * @throws NullPointerException if the specified key is null
+     * 如果有这个key, 那么就返回key对应的value.
+     * 如果没有这个key, 那么就返回defaultValue.
      */
     public V getOrDefault(Object key, V defaultValue) {
         V v;
         return (v = get(key)) == null ? defaultValue : v;
     }
 
+    /**
+     * 遍历, 对每个元素都执行action操作
+     */
     public void forEach(BiConsumer<? super K, ? super V> action) {
         if (action == null) throw new NullPointerException();
         Node<K, V>[] t;
@@ -1130,6 +1022,10 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
+    /**
+     * 将所有对应的key-value,替换为function的return值.
+     * (是`所有对应的`   而不是`所有的`)
+     */
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         if (function == null) throw new NullPointerException();
         Node<K, V>[] t;
@@ -1362,8 +1258,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * @throws RuntimeException      or Error if the remappingFunction does so,
      *                               in which case the mapping is unchanged
      */
-    public V compute(K key,
-                     BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
+    public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         if (key == null || remappingFunction == null)
             throw new NullPointerException();
         int h = spread(key.hashCode());
@@ -1574,29 +1469,14 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Legacy method testing if some key maps into the specified value
-     * in this table.  This method is identical in functionality to
-     * {@link #containsValue(Object)}, and exists solely to ensure
-     * full compatibility with class {@link Hashtable},
-     * which supported this method prior to introduction of the
-     * Java Collections framework.
-     *
-     * @param value a value to search for
-     * @return {@code true} if and only if some key maps to the
-     * {@code value} argument in this table as
-     * determined by the {@code equals} method;
-     * {@code false} otherwise
-     * @throws NullPointerException if the specified value is null
+     * @return map中是否有这个value
      */
     public boolean contains(Object value) {
         return containsValue(value);
     }
 
     /**
-     * Returns an enumeration of the keys in this table.
-     *
-     * @return an enumeration of the keys in this table
-     * @see #keySet()
+     * @return 返回当前map的所有key的eneumeration集合
      */
     public Enumeration<K> keys() {
         Node<K, V>[] t;
@@ -1605,10 +1485,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns an enumeration of the values in this table.
-     *
-     * @return an enumeration of the values in this table
-     * @see #values()
+     * @return 返回当前map的所有value的eneumeration集合
      */
     public Enumeration<V> elements() {
         Node<K, V>[] t;
@@ -1625,6 +1502,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *
      * @return the number of mappings
      * @since 1.8
+     * <p>
+     * https://blog.csdn.net/tianyuxingxuan/article/details/77446524
+     * TODO
      */
     public long mappingCount() {
         long n = sumCount();
@@ -1644,8 +1524,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * @throws NullPointerException if the mappedValue is null
      */
     public KeySetView<K, V> keySet(V mappedValue) {
-        if (mappedValue == null)
-            throw new NullPointerException();
+        if (mappedValue == null) throw new NullPointerException();
         return new KeySetView<K, V>(this, mappedValue);
     }
 
