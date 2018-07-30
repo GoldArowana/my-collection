@@ -26,8 +26,7 @@ import java.util.function.*;
 public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         implements ConcurrentMap<K, V>, Serializable {
     /**
-     * The largest possible (non-power of two) array size.
-     * Needed by toArray and related methods.
+     * 最大限制
      */
     static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
@@ -37,7 +36,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     static final int TREEIFY_THRESHOLD = 8;
 
     /**
-     * 小于这个值, 变回链表
+     * 小于这个值, 退化为链表
      */
     static final int UNTREEIFY_THRESHOLD = 6;
     /**
@@ -56,7 +55,6 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
     /**
-     * Number of CPUS, to place bounds on some sizings
      * CPU的个数.
      */
     static final int NCPU = Runtime.getRuntime().availableProcessors();
@@ -142,22 +140,16 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             U = (Unsafe) theUnsafe.get(null);
 
             Class<?> k = MyConcurrentHashMap.class;
-            SIZECTL = U.objectFieldOffset
-                    (k.getDeclaredField("sizeCtl"));
-            TRANSFERINDEX = U.objectFieldOffset
-                    (k.getDeclaredField("transferIndex"));
-            BASECOUNT = U.objectFieldOffset
-                    (k.getDeclaredField("baseCount"));
-            CELLSBUSY = U.objectFieldOffset
-                    (k.getDeclaredField("cellsBusy"));
+            SIZECTL = U.objectFieldOffset(k.getDeclaredField("sizeCtl"));
+            TRANSFERINDEX = U.objectFieldOffset(k.getDeclaredField("transferIndex"));
+            BASECOUNT = U.objectFieldOffset(k.getDeclaredField("baseCount"));
+            CELLSBUSY = U.objectFieldOffset(k.getDeclaredField("cellsBusy"));
             Class<?> ck = CounterCell.class;
-            CELLVALUE = U.objectFieldOffset
-                    (ck.getDeclaredField("value"));
+            CELLVALUE = U.objectFieldOffset(ck.getDeclaredField("value"));
             Class<?> ak = Node[].class;
             ABASE = U.arrayBaseOffset(ak);
             int scale = U.arrayIndexScale(ak);
-            if ((scale & (scale - 1)) != 0)
-                throw new Error("data type scale not a power of two");
+            if ((scale & (scale - 1)) != 0) throw new Error("data type scale not a power of two");
             ASHIFT = 31 - Integer.numberOfLeadingZeros(scale);
         } catch (Exception e) {
             throw new Error(e);
@@ -166,17 +158,17 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * The array of bins. Lazily initialized upon first insertion.
-     * Size is always a power of two. Accessed directly by iterators.
+     * 大小必须是2的指数
      */
     transient volatile Node<K, V>[] table;
     /**
-     * The next table to use; non-null only while resizing.
+     * 下一个用来替换的数组; 只有在resize的时候nextTable才不是null
      */
     private transient volatile Node<K, V>[] nextTable;
     /**
      * Base counter value, used mainly when there is no contention,
      * but also as a fallback during table initialization
-     * races. Updated via CAS.
+     * races. 这个值会用CAS来更新.
      */
     private transient volatile long baseCount;
 
@@ -203,23 +195,26 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * next element count value upon which to resize the table.
      */
     private transient volatile int sizeCtl;
+
     /**
      * The next table index (plus one) to split while resizing.
+     * transferIndex 表示转移时的下标，初始为扩容前的 length
      */
     private transient volatile int transferIndex;
+
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
      */
     private transient volatile int cellsBusy;
+
     /**
-     * Table of counter cells. When non-null, size is a power of 2.
+     * Table of counter cells. 不是null的时候, 大小是2的指数
      */
     private transient volatile CounterCell[] counterCells;
+
     // views. 视图
     private transient KeySetView<K, V> keySet;
     private transient ValuesView<K, V> values;
-
-
     private transient EntrySetView<K, V> entrySet;
 
     /**
@@ -411,15 +406,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns the value to which the specified key is mapped,
-     * or {@code null} if this map contains no mapping for the key.
-     *
-     * <p>More formally, if this map contains a mapping from a key
-     * {@code funtions} to a value {@code v} such that {@code key.equals(funtions)},
-     * then this method returns {@code v}; otherwise it returns
-     * {@code null}.  (There can be at most one such mapping.)
-     *
-     * @throws NullPointerException if the specified key is null
+     * 根据key, 取得value
      */
     public V get(Object key) {
         /*
@@ -428,7 +415,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
          * 根据该位置处结点性质进行相应查找
          *      -如果该位置为 null，那么直接返回 null 就可以了
          *      -如果该位置处的节点刚好就是我们需要的，返回该节点的值即可
-         *      -如果该位置节点的 hash 值小于 0，说明正在扩容，或者是红黑树，后面我们再介绍 find 方法
+         *      -如果该位置节点的 hash 值小于 0，说明正在扩容，或者是红黑树，调用 find 方法
          *      -如果以上 3 条都不满足，那就是链表，进行遍历比对即可
          */
 
@@ -437,20 +424,22 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         int n, eh;
         K ek;
         int h = spread(key.hashCode());
-        if ((tab = table) != null && (n = tab.length) > 0 &&
-                (e = tabAt(tab, (n - 1) & h)) != null) {
-            // 判断头结点是否就是我们需要的节点
+        // 如果哈希桶的数组不空, 桶的个数大于0, 而且key的hash对应的桶里有元素存在.
+        if ((tab = table) != null && (n = tab.length) > 0 && (e = tabAt(tab, (n - 1) & h)) != null) {
+            // 先判断该位置上的第一个元素和参数key的哈希值是否相等.
             if ((eh = e.hash) == h) {
+                // 再判断key是否相等.
                 if ((ek = e.key) == key || (ek != null && key.equals(ek)))
+                    // 如果相等, 那就是找到了.
                     return e.value;
+
                 // 如果头结点的 hash 小于 0，说明 正在扩容，或者该位置是红黑树
             } else if (eh < 0)
                 // 参考 ForwardingNode.find(int h, Object k) 和 TreeBin.find(int h, Object k)
                 return (p = e.find(h, key)) != null ? p.value : null;
             // 遍历链表
             while ((e = e.next) != null) {
-                if (e.hash == h &&
-                        ((ek = e.key) == key || (ek != null && key.equals(ek))))
+                if (e.hash == h && ((ek = e.key) == key || (ek != null && key.equals(ek))))
                     return e.value;
             }
         }
