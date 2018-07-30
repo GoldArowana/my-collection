@@ -16,6 +16,9 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.*;
 
+/**
+ * https://blog.csdn.net/u011392897/article/details/60479937
+ */
 public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         implements ConcurrentMap<K, V>, Serializable {
     /**
@@ -111,15 +114,18 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * The number of bits used for generation stamp in sizeCtl.
      * Must be at least 6 for 32bit arrays.
+     * 用于生成每次扩容都唯一的生成戳的数，最小是6。很奇怪，这个值不是常量，但是也不提供修改方法。
      */
     private static int RESIZE_STAMP_BITS = 16;
     /**
      * The maximum number of threads that can help resize.
      * Must fit in 32 - RESIZE_STAMP_BITS bits.
+     * 最大的扩容线程的数量，如果上面的 RESIZE_STAMP_BITS = 32，那么此值为 0，这一点也很奇怪。
      */
     private static final int MAX_RESIZERS = (1 << (32 - RESIZE_STAMP_BITS)) - 1;
     /**
      * The bit shift for recording size stamp in sizeCtl.
+     * 移位量，把生成戳移位后保存在sizeCtl中当做扩容线程计数的基数，相反方向移位后能够反解出生成戳
      */
     private static final int RESIZE_STAMP_SHIFT = 32 - RESIZE_STAMP_BITS;
 
@@ -169,6 +175,21 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * races. Updated via CAS.
      */
     private transient volatile long baseCount;
+
+
+    // 非常重要的一个属性，源码中的英文翻译，直译过来是下面的四行文字的意思
+    //     sizeCtl = -1，表示有线程正在进行真正的初始化操作
+    //     sizeCtl = -(1 + nThreads)，表示有nThreads个线程正在进行扩容操作
+    //     sizeCtl > 0，表示接下来的真正的初始化操作中使用的容量，或者初始化/扩容完成后的threshold
+    //     sizeCtl = 0，默认值，此时在真正的初始化操作中使用默认容量
+    // 但是，通过我对源码的理解，这段注释实际上是有问题的，
+    //     有问题的是第二句，sizeCtl = -(1 + nThreads)这个，网上好多都是用第二句的直接翻译去解释代码，这样理解是错误的
+    // 默认构造的16个大小的ConcurrentHashMap，只有一个线程执行扩容时，sizeCtl = -2145714174，
+    //     但是照这段英文注释的意思，sizeCtl的值应该是 -(1 + 1) = -2
+    // sizeCtl在小于0时的确有记录有多少个线程正在执行扩容任务的功能，但是不是这段英文注释说的那样直接用 -(1 + nThreads)
+    // 实际中使用了一种生成戳，根据生成戳算出一个基数，不同轮次的扩容操作的生成戳都是唯一的，来保证多次扩容之间不会交叉重叠，
+    //     当有n个线程正在执行扩容时，sizeCtl在值变为 (基数 + n)
+    // 1.8.0_111的源码的383-384行写了个说明：A generation stamp in field sizeCtl ensures that resizings do not overlap.
     /**
      * Table initialization and resizing control.  When negative, the
      * table is being initialized or resized: -1 for initialization,
@@ -231,63 +252,23 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         this(initialCapacity, loadFactor, 1);
     }
 
-    // Original (since JDK1.2) Map methods
-
     /**
-     * Creates a new, empty map with an initial table size based on
-     * the given number of elements ({@code initialCapacity}), table
-     * density ({@code loadFactor}), and number of concurrently
-     * updating threads ({@code concurrencyLevel}).
-     *
-     * @param initialCapacity  the initial capacity. The implementation
-     *                         performs internal sizing to accommodate this many elements,
-     *                         given the specified load factor.
-     * @param loadFactor       the load factor (table density) for
-     *                         establishing the initial table size
-     * @param concurrencyLevel the estimated number of concurrently
-     *                         updating threads. The implementation may use this value as
-     *                         a sizing hint.
-     * @throws IllegalArgumentException if the initial capacity is
-     *                                  negative or the load factor or concurrencyLevel are
-     *                                  nonpositive
      */
-    public MyConcurrentHashMap(int initialCapacity,
-                               float loadFactor, int concurrencyLevel) {
-        if (!(loadFactor > 0.0f) || initialCapacity < 0 || concurrencyLevel <= 0)
-            throw new IllegalArgumentException();
-        if (initialCapacity < concurrencyLevel)   // Use at least as many bins
-            initialCapacity = concurrencyLevel;   // as estimated threads
+    public MyConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
+        if (!(loadFactor > 0.0f) || initialCapacity < 0 || concurrencyLevel <= 0) throw new IllegalArgumentException();
+
+        if (initialCapacity < concurrencyLevel) initialCapacity = concurrencyLevel;
         long size = (long) (1.0 + (long) initialCapacity / loadFactor);
-        int cap = (size >= (long) MAXIMUM_CAPACITY) ?
-                MAXIMUM_CAPACITY : tableSizeFor((int) size);
-        this.sizeCtl = cap;
+        this.sizeCtl = (size >= (long) MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : tableSizeFor((int) size);
     }
 
-    /**
-     * Spreads (XORs) higher bits of hash to lower and also forces top
-     * bit to 0. Because the table uses power-of-two masking, sets of
-     * hashes that vary only in bits above the current mask will
-     * always collide. (Among known examples are sets of Float keys
-     * holding consecutive whole numbers in small tables.)  So we
-     * apply a transform that spreads the impact of higher bits
-     * downward. There is a tradeoff between speed, utility, and
-     * quality of bit-spreading. Because many common sets of hashes
-     * are already reasonably distributed (so don't benefit from
-     * spreading), and because we use trees to handle large sets of
-     * collisions in bins, we just XOR some shifted bits in the
-     * cheapest possible way to reduce systematic lossage, as well as
-     * to incorporate impact of the highest bits that would otherwise
-     * never be used in index calculations because of table bounds.
-     */
     static final int spread(int h) {
-        // 与 HashMap 中取 hash 的方法类似，高 16 位与低 16 位相与
-        // 不同的是需要保存第一位为 0
+        // 与 HashMap 中取 hash 的方法类似，高 16 位与低 16 位相与, 不同的是需要保存第一位为 0
         return (h ^ (h >>> 16)) & HASH_BITS;
     }
 
     /**
-     * Returns a power of two table size for the given desired capacity.
-     * See Hackers Delight, sec 3.2
+     * @return 返回一个2的指数, 而这个指数是所有2的指数中, 刚好大于c值的.
      */
     private static final int tableSizeFor(int c) {
         int n = c - 1;
@@ -302,6 +283,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * Returns x's Class if it is of the form "class C implements
      * Comparable<C>", else null.
+     * TODO
      */
     static Class<?> comparableClassFor(Object x) {
         if (x instanceof Comparable) {
@@ -326,27 +308,31 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Returns funtions.compareTo(x) if x matches kc (funtions's screened comparable
-     * class), else 0.
+     * Returns funtions.compareTo(x) if x matches kc (funtions's screened comparable class), else 0.
      */
     @SuppressWarnings({"rawtypes", "unchecked"}) // for cast to Comparable
     static int compareComparables(Class<?> kc, Object k, Object x) {
-        return (x == null || x.getClass() != kc ? 0 :
-                ((Comparable) k).compareTo(x));
+        return (x == null || x.getClass() != kc ? 0 : ((Comparable) k).compareTo(x));
     }
 
+    /**
+     * 获取table中对应索引的元素
+     */
     @SuppressWarnings("unchecked")
     static final <K, V> Node<K, V> tabAt(Node<K, V>[] tab, int i) {
-        // 获取table中对应索引的元素
         return (Node<K, V>) U.getObjectVolatile(tab, ((long) i << ASHIFT) + ABASE);
     }
 
-    static final <K, V> boolean casTabAt(Node<K, V>[] tab, int i,
-                                         Node<K, V> c, Node<K, V> v) {
-        // 如果成功则返回，如果CAS失败，说明有其它线程提前插入了节点，自旋重新尝试在这个位置插入节点。
+    /**
+     * 如果成功则返回，如果CAS失败，说明有其它线程提前插入了节点，自旋重新尝试在这个位置插入节点。
+     */
+    static final <K, V> boolean casTabAt(Node<K, V>[] tab, int i, Node<K, V> c, Node<K, V> v) {
         return U.compareAndSwapObject(tab, ((long) i << ASHIFT) + ABASE, c, v);
     }
 
+    /**
+     * 设置table中对应索引的元素
+     */
     static final <K, V> void setTabAt(Node<K, V>[] tab, int i, Node<K, V> v) {
         U.putObjectVolatile(tab, ((long) i << ASHIFT) + ABASE, v);
     }
@@ -358,10 +344,10 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * @param <K> the element type of the returned set
      * @return the new set
      * @since 1.8
+     * TODO
      */
     public static <K> KeySetView<K, Boolean> newKeySet() {
-        return new KeySetView<K, Boolean>
-                (new MyConcurrentHashMap<K, Boolean>(), Boolean.TRUE);
+        return new KeySetView<K, Boolean>(new MyConcurrentHashMap<K, Boolean>(), Boolean.TRUE);
     }
 
     /**
@@ -372,9 +358,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *                        sizing to accommodate this many elements.
      * @param <K>             the element type of the returned set
      * @return the new set
-     * @throws IllegalArgumentException if the initial capacity of
-     *                                  elements is negative
      * @since 1.8
+     * TODO
      */
     public static <K> KeySetView<K, Boolean> newKeySet(int initialCapacity) {
         return new KeySetView<K, Boolean>
@@ -384,6 +369,12 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * Returns the stamp bits for resizing a table of size counter.
      * Must be negative when shifted left by RESIZE_STAMP_SHIFT.
+     * <p>
+     * <p>
+     * 返回与扩容有关的一个生成戳rs，每次新的扩容，都有一个不同的n，这个生成戳就是根据n来计算出来的一个数字，n不同，这个数字也不同
+     * 另外还得保证 rs << RESIZE_STAMP_SHIFT 必须是负数
+     * 这个方法的返回值，当且仅当 RESIZE_STAMP_SIZE = 32时为负数
+     * 但是b = 32时MAX_RESIZERS = (1 << (32 - RESIZE_STAMP_BITS)) - 1 = 0，这一点很奇怪
      */
     static final int resizeStamp(int n) {
         return Integer.numberOfLeadingZeros(n) | (1 << (RESIZE_STAMP_BITS - 1));
@@ -391,6 +382,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Returns a list on non-TreeNodes replacing those in given list.
+     * 退化为链表
      */
     static <K, V> Node<K, V> untreeify(Node<K, V> b) {
         Node<K, V> hd = null, tl = null;
@@ -405,19 +397,11 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         return hd;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public int size() {
         long n = sumCount();
-        return ((n < 0L) ? 0 :
-                (n > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE :
-                        (int) n);
+        return ((n < 0L) ? 0 : (n > (long) Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int) n);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     public boolean isEmpty() {
         return sumCount() <= 0L; // ignore transient negative values
     }
@@ -430,7 +414,6 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * {@code funtions} to a value {@code v} such that {@code key.equals(funtions)},
      * then this method returns {@code v}; otherwise it returns
      * {@code null}.  (There can be at most one such mapping.)
-     *
      * @throws NullPointerException if the specified key is null
      */
     public V get(Object key) {
