@@ -3643,8 +3643,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-    static final class KeyIterator<K, V> extends BaseIterator<K, V>
-            implements Iterator<K>, Enumeration<K> {
+    static final class KeyIterator<K, V> extends BaseIterator<K, V> implements Iterator<K>, Enumeration<K> {
         KeyIterator(Node<K, V>[] tab, int index, int size, int limit,
                     MyConcurrentHashMap<K, V> map) {
             super(tab, index, size, limit, map);
@@ -3665,8 +3664,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-    static final class ValueIterator<K, V> extends BaseIterator<K, V>
-            implements Iterator<V>, Enumeration<V> {
+    static final class ValueIterator<K, V> extends BaseIterator<K, V> implements Iterator<V>, Enumeration<V> {
         ValueIterator(Node<K, V>[] tab, int index, int size, int limit,
                       MyConcurrentHashMap<K, V> map) {
             super(tab, index, size, limit, map);
@@ -3687,8 +3685,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-    static final class EntryIterator<K, V> extends BaseIterator<K, V>
-            implements Iterator<Entry<K, V>> {
+    static final class EntryIterator<K, V> extends BaseIterator<K, V> implements Iterator<Entry<K, V>> {
         EntryIterator(Node<K, V>[] tab, int index, int size, int limit,
                       MyConcurrentHashMap<K, V> map) {
             super(tab, index, size, limit, map);
@@ -3763,8 +3760,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-    static final class KeySpliterator<K, V> extends Traverser<K, V>
-            implements Spliterator<K> {
+    static final class KeySpliterator<K, V> extends Traverser<K, V> implements Spliterator<K> {
         long est;               // size estimate
 
         KeySpliterator(Node<K, V>[] tab, int size, int index, int limit,
@@ -3805,8 +3801,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-    static final class ValueSpliterator<K, V> extends Traverser<K, V>
-            implements Spliterator<V> {
+    static final class ValueSpliterator<K, V> extends Traverser<K, V> implements Spliterator<V> {
         long est;               // size estimate
 
         ValueSpliterator(Node<K, V>[] tab, int size, int index, int limit,
@@ -3846,8 +3841,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         }
     }
 
-    static final class EntrySpliterator<K, V> extends Traverser<K, V>
-            implements Spliterator<Entry<K, V>> {
+    static final class EntrySpliterator<K, V> extends Traverser<K, V> implements Spliterator<Entry<K, V>> {
         final MyConcurrentHashMap<K, V> map; // To export MapEntry
         long est;               // size estimate
 
@@ -3893,8 +3887,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * Base class for views.
      */
-    abstract static class CollectionView<K, V, E>
-            implements Collection<E>, Serializable {
+    abstract static class CollectionView<K, V, E> implements Collection<E>, Serializable {
         private static final long serialVersionUID = 7249069246763182397L;
         private static final String oomeMsg = "Required array size too large";
         final MyConcurrentHashMap<K, V> map;
@@ -4071,8 +4064,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      *
      * @since 1.8
      */
-    public static class KeySetView<K, V> extends CollectionView<K, V, K>
-            implements Set<K>, Serializable {
+    public static class KeySetView<K, V> extends CollectionView<K, V, K> implements Set<K>, Serializable {
         private static final long serialVersionUID = 7249069246763182397L;
         private final V value;
 
@@ -4202,8 +4194,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * values, in which additions are disabled. This class cannot be
      * directly instantiated. See {@link #values()}.
      */
-    static final class ValuesView<K, V> extends CollectionView<K, V, V>
-            implements Collection<V>, Serializable {
+    static final class ValuesView<K, V> extends CollectionView<K, V, V> implements Collection<V>, Serializable {
         private static final long serialVersionUID = 2249069246763182397L;
 
         ValuesView(MyConcurrentHashMap<K, V> map) {
@@ -4455,8 +4446,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * simplest hoisted bypass to help avoid convoluted traps.
      */
     @SuppressWarnings("serial")
-    static final class ForEachKeyTask<K, V>
-            extends BulkTask<K, V, Void> {
+    static final class ForEachKeyTask<K, V> extends BulkTask<K, V, Void> {
         final Consumer<? super K> action;
 
         ForEachKeyTask
@@ -4484,8 +4474,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ForEachValueTask<K, V>
-            extends BulkTask<K, V, Void> {
+    static final class ForEachValueTask<K, V> extends BulkTask<K, V, Void> {
         final Consumer<? super V> action;
 
         ForEachValueTask
@@ -4513,8 +4502,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ForEachEntryTask<K, V>
-            extends BulkTask<K, V, Void> {
+    static final class ForEachEntryTask<K, V> extends BulkTask<K, V, Void> {
         final Consumer<? super Entry<K, V>> action;
 
         ForEachEntryTask
@@ -4542,8 +4530,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ForEachMappingTask<K, V>
-            extends BulkTask<K, V, Void> {
+    static final class ForEachMappingTask<K, V> extends BulkTask<K, V, Void> {
         final BiConsumer<? super K, ? super V> action;
 
         ForEachMappingTask
@@ -4571,8 +4558,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ForEachTransformedKeyTask<K, V, U>
-            extends BulkTask<K, V, Void> {
+    static final class ForEachTransformedKeyTask<K, V, U> extends BulkTask<K, V, Void> {
         final Function<? super K, ? extends U> transformer;
         final Consumer<? super U> action;
 
@@ -4607,8 +4593,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ForEachTransformedValueTask<K, V, U>
-            extends BulkTask<K, V, Void> {
+    static final class ForEachTransformedValueTask<K, V, U> extends BulkTask<K, V, Void> {
         final Function<? super V, ? extends U> transformer;
         final Consumer<? super U> action;
 
@@ -4643,8 +4628,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ForEachTransformedEntryTask<K, V, U>
-            extends BulkTask<K, V, Void> {
+    static final class ForEachTransformedEntryTask<K, V, U> extends BulkTask<K, V, Void> {
         final Function<Entry<K, V>, ? extends U> transformer;
         final Consumer<? super U> action;
 
@@ -4679,8 +4663,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ForEachTransformedMappingTask<K, V, U>
-            extends BulkTask<K, V, Void> {
+    static final class ForEachTransformedMappingTask<K, V, U> extends BulkTask<K, V, Void> {
         final BiFunction<? super K, ? super V, ? extends U> transformer;
         final Consumer<? super U> action;
 
@@ -4716,8 +4699,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class SearchKeysTask<K, V, U>
-            extends BulkTask<K, V, U> {
+    static final class SearchKeysTask<K, V, U> extends BulkTask<K, V, U> {
         final Function<? super K, ? extends U> searchFunction;
         final AtomicReference<U> result;
 
@@ -4766,8 +4748,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class SearchValuesTask<K, V, U>
-            extends BulkTask<K, V, U> {
+    static final class SearchValuesTask<K, V, U> extends BulkTask<K, V, U> {
         final Function<? super V, ? extends U> searchFunction;
         final AtomicReference<U> result;
 
@@ -4816,8 +4797,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class SearchEntriesTask<K, V, U>
-            extends BulkTask<K, V, U> {
+    static final class SearchEntriesTask<K, V, U> extends BulkTask<K, V, U> {
         final Function<Entry<K, V>, ? extends U> searchFunction;
         final AtomicReference<U> result;
 
@@ -4866,8 +4846,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class SearchMappingsTask<K, V, U>
-            extends BulkTask<K, V, U> {
+    static final class SearchMappingsTask<K, V, U> extends BulkTask<K, V, U> {
         final BiFunction<? super K, ? super V, ? extends U> searchFunction;
         final AtomicReference<U> result;
 
@@ -4916,8 +4895,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ReduceKeysTask<K, V>
-            extends BulkTask<K, V, K> {
+    static final class ReduceKeysTask<K, V> extends BulkTask<K, V, K> {
         final BiFunction<? super K, ? super K, ? extends K> reducer;
         K result;
         ReduceKeysTask<K, V> rights, nextRight;
@@ -4970,8 +4948,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ReduceValuesTask<K, V>
-            extends BulkTask<K, V, V> {
+    static final class ReduceValuesTask<K, V> extends BulkTask<K, V, V> {
         final BiFunction<? super V, ? super V, ? extends V> reducer;
         V result;
         ReduceValuesTask<K, V> rights, nextRight;
@@ -5024,8 +5001,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class ReduceEntriesTask<K, V>
-            extends BulkTask<K, V, Entry<K, V>> {
+    static final class ReduceEntriesTask<K, V> extends BulkTask<K, V, Entry<K, V>> {
         final BiFunction<Entry<K, V>, Entry<K, V>, ? extends Entry<K, V>> reducer;
         Entry<K, V> result;
         ReduceEntriesTask<K, V> rights, nextRight;
@@ -5076,8 +5052,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceKeysTask<K, V, U>
-            extends BulkTask<K, V, U> {
+    static final class MapReduceKeysTask<K, V, U> extends BulkTask<K, V, U> {
         final Function<? super K, ? extends U> transformer;
         final BiFunction<? super U, ? super U, ? extends U> reducer;
         U result;
@@ -5136,8 +5111,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceValuesTask<K, V, U>
-            extends BulkTask<K, V, U> {
+    static final class MapReduceValuesTask<K, V, U> extends BulkTask<K, V, U> {
         final Function<? super V, ? extends U> transformer;
         final BiFunction<? super U, ? super U, ? extends U> reducer;
         U result;
@@ -5196,8 +5170,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceEntriesTask<K, V, U>
-            extends BulkTask<K, V, U> {
+    static final class MapReduceEntriesTask<K, V, U> extends BulkTask<K, V, U> {
         final Function<Entry<K, V>, ? extends U> transformer;
         final BiFunction<? super U, ? super U, ? extends U> reducer;
         U result;
@@ -5256,8 +5229,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceMappingsTask<K, V, U>
-            extends BulkTask<K, V, U> {
+    static final class MapReduceMappingsTask<K, V, U> extends BulkTask<K, V, U> {
         final BiFunction<? super K, ? super V, ? extends U> transformer;
         final BiFunction<? super U, ? super U, ? extends U> reducer;
         U result;
@@ -5316,8 +5288,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceKeysToDoubleTask<K, V>
-            extends BulkTask<K, V, Double> {
+    static final class MapReduceKeysToDoubleTask<K, V> extends BulkTask<K, V, Double> {
         final ToDoubleFunction<? super K> transformer;
         final DoubleBinaryOperator reducer;
         final double basis;
@@ -5373,8 +5344,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceValuesToDoubleTask<K, V>
-            extends BulkTask<K, V, Double> {
+    static final class MapReduceValuesToDoubleTask<K, V> extends BulkTask<K, V, Double> {
         final ToDoubleFunction<? super V> transformer;
         final DoubleBinaryOperator reducer;
         final double basis;
@@ -5430,8 +5400,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceEntriesToDoubleTask<K, V>
-            extends BulkTask<K, V, Double> {
+    static final class MapReduceEntriesToDoubleTask<K, V> extends BulkTask<K, V, Double> {
         final ToDoubleFunction<Entry<K, V>> transformer;
         final DoubleBinaryOperator reducer;
         final double basis;
@@ -5487,8 +5456,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceMappingsToDoubleTask<K, V>
-            extends BulkTask<K, V, Double> {
+    static final class MapReduceMappingsToDoubleTask<K, V> extends BulkTask<K, V, Double> {
         final ToDoubleBiFunction<? super K, ? super V> transformer;
         final DoubleBinaryOperator reducer;
         final double basis;
@@ -5544,8 +5512,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceKeysToLongTask<K, V>
-            extends BulkTask<K, V, Long> {
+    static final class MapReduceKeysToLongTask<K, V> extends BulkTask<K, V, Long> {
         final ToLongFunction<? super K> transformer;
         final LongBinaryOperator reducer;
         final long basis;
@@ -5601,8 +5568,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceValuesToLongTask<K, V>
-            extends BulkTask<K, V, Long> {
+    static final class MapReduceValuesToLongTask<K, V> extends BulkTask<K, V, Long> {
         final ToLongFunction<? super V> transformer;
         final LongBinaryOperator reducer;
         final long basis;
@@ -5658,8 +5624,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceEntriesToLongTask<K, V>
-            extends BulkTask<K, V, Long> {
+    static final class MapReduceEntriesToLongTask<K, V> extends BulkTask<K, V, Long> {
         final ToLongFunction<Entry<K, V>> transformer;
         final LongBinaryOperator reducer;
         final long basis;
@@ -5715,8 +5680,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceMappingsToLongTask<K, V>
-            extends BulkTask<K, V, Long> {
+    static final class MapReduceMappingsToLongTask<K, V> extends BulkTask<K, V, Long> {
         final ToLongBiFunction<? super K, ? super V> transformer;
         final LongBinaryOperator reducer;
         final long basis;
@@ -5772,8 +5736,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceKeysToIntTask<K, V>
-            extends BulkTask<K, V, Integer> {
+    static final class MapReduceKeysToIntTask<K, V> extends BulkTask<K, V, Integer> {
         final ToIntFunction<? super K> transformer;
         final IntBinaryOperator reducer;
         final int basis;
@@ -5829,8 +5792,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceValuesToIntTask<K, V>
-            extends BulkTask<K, V, Integer> {
+    static final class MapReduceValuesToIntTask<K, V> extends BulkTask<K, V, Integer> {
         final ToIntFunction<? super V> transformer;
         final IntBinaryOperator reducer;
         final int basis;
@@ -5886,20 +5848,18 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceEntriesToIntTask<K, V>
-            extends BulkTask<K, V, Integer> {
+    static final class MapReduceEntriesToIntTask<K, V> extends BulkTask<K, V, Integer> {
         final ToIntFunction<Entry<K, V>> transformer;
         final IntBinaryOperator reducer;
         final int basis;
         int result;
         MapReduceEntriesToIntTask<K, V> rights, nextRight;
 
-        MapReduceEntriesToIntTask
-                (BulkTask<K, V, ?> p, int b, int i, int f, Node<K, V>[] t,
-                 MapReduceEntriesToIntTask<K, V> nextRight,
-                 ToIntFunction<Entry<K, V>> transformer,
-                 int basis,
-                 IntBinaryOperator reducer) {
+        MapReduceEntriesToIntTask(BulkTask<K, V, ?> p, int b, int i, int f, Node<K, V>[] t,
+                                  MapReduceEntriesToIntTask<K, V> nextRight,
+                                  ToIntFunction<Entry<K, V>> transformer,
+                                  int basis,
+                                  IntBinaryOperator reducer) {
             super(p, b, i, f, t);
             this.nextRight = nextRight;
             this.transformer = transformer;
@@ -5943,20 +5903,18 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     @SuppressWarnings("serial")
-    static final class MapReduceMappingsToIntTask<K, V>
-            extends BulkTask<K, V, Integer> {
+    static final class MapReduceMappingsToIntTask<K, V> extends BulkTask<K, V, Integer> {
         final ToIntBiFunction<? super K, ? super V> transformer;
         final IntBinaryOperator reducer;
         final int basis;
         int result;
         MapReduceMappingsToIntTask<K, V> rights, nextRight;
 
-        MapReduceMappingsToIntTask
-                (BulkTask<K, V, ?> p, int b, int i, int f, Node<K, V>[] t,
-                 MapReduceMappingsToIntTask<K, V> nextRight,
-                 ToIntBiFunction<? super K, ? super V> transformer,
-                 int basis,
-                 IntBinaryOperator reducer) {
+        MapReduceMappingsToIntTask(BulkTask<K, V, ?> p, int b, int i, int f, Node<K, V>[] t,
+                                   MapReduceMappingsToIntTask<K, V> nextRight,
+                                   ToIntBiFunction<? super K, ? super V> transformer,
+                                   int basis,
+                                   IntBinaryOperator reducer) {
             super(p, b, i, f, t);
             this.nextRight = nextRight;
             this.transformer = transformer;
