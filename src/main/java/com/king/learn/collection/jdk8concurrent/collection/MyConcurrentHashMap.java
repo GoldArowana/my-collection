@@ -26,7 +26,7 @@ import java.util.function.*;
 public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         implements ConcurrentMap<K, V>, Serializable {
     /**
-     * 最大限制
+     * 最大限制, 主要用在Collection.toArray两个方法中
      */
     static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
@@ -39,6 +39,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * 小于这个值, 退化为链表
      */
     static final int UNTREEIFY_THRESHOLD = 6;
+
     /**
      * 在转变成树之前，还会有一次判断，只有键值对数量大于 64 才会发生转换。
      * 这是为了避免在哈希表建立初期，多个键值对恰好被放入了同一个链表中而导致不必要的转化。
@@ -46,18 +47,43 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     static final int MIN_TREEIFY_CAPACITY = 64;
     /*
      * Encodings for Node hash fields. See above for explanation.
+     * 下面几个是特殊的节点的hash值 ，
+     * 正常节点的hash值在hash函数中都处理过了，不会出现负数的情况,
+     * 特殊节点在各自的实现类中有特殊的遍历方法
+     */
+
+    /**
+     * ForwardingNode的hash值，ForwardingNode是一种临时节点，在扩进行中才会出现，并且它不存储实际的数据
+     * 如果旧数组的一个hash桶中全部的节点都迁移到新数组中，旧数组就在这个hash桶中放置一个ForwardingNode
+     * 读操作或者迭代读时碰到ForwardingNode时，将操作转发到扩容后的新的table数组上去执行，写操作碰见它时，则尝试帮助扩容
      */
     static final int MOVED = -1; // hash for forwarding nodes
+
+
+    /**
+     * TreeBin的hash值，TreeBin是ConcurrentHashMap中用于代理操作TreeNode的特殊节点，持有存储实际数据的红黑树的根节点
+     * 因为红黑树进行写入操作，整个树的结构可能会有很大的变化，这个对读线程有很大的影响，
+     * 所以TreeBin还要维护一个简单读写锁. 这是相对HashMap，这个类新引入这种特殊节点的重要原因
+     */
     static final int TREEBIN = -2; // hash for roots of trees
+
+    /**
+     * ReservationNode的hash值，ReservationNode是一个保留节点，就是个占位符，不会保存实际的数据，正常情况是不会出现的，
+     * 在jdk1.8新的函数式有关的两个方法computeIfAbsent和compute中才会出现
+     */
     static final int RESERVED = -3; // hash for transient reservations
 
-    // https://stackoverflow.com/questions/9380670/why-does-java-use-hash-0x7fffffff-tab-length-to-decide-the-index-of-a-key
+    /**
+     * 用于和负数hash值进行 & 运算，将其转化为正数（绝对值不相等），Hashtable中定位hash桶也有使用这种方式来进行负数转正数
+     * https://stackoverflow.com/questions/9380670/why-does-java-use-hash-0x7fffffff-tab-length-to-decide-the-index-of-a-key
+     */
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
     /**
-     * CPU的个数.
+     * CPU的核心数，用于在扩容时计算一个线程一次要干多少活
      */
     static final int NCPU = Runtime.getRuntime().availableProcessors();
+
     private static final long serialVersionUID = 7249069246763182397L;
 
     /**
@@ -75,25 +101,33 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     private static final int DEFAULT_CAPACITY = 16;
 
     /**
-     * 散列表的默认并发级别为 16。该值表示当前更新线程的估计数
+     * @implNote 默认并行级别，主体代码中未使用此常量，为了兼容性，保留了之前的定义，
+     * 主要是配合同样是为了兼容性的Segment使用，另外在构造方法中有一些作用
+     * @implSpec 千万注意，1.8的并发级别有了大的改动，具体并发级别可以认为是hash桶是数量，也就是容量，会随扩容而改变，不再是固定值
      */
     private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
     /**
-     * 负载因子
+     * @implNote 负载因子, 为了兼容性，保留了这个常量（名字变了），配合同样是为了兼容性的Segment使用
+     * @implSpec 1.8的ConcurrentHashMap的加载因子固定为 0.75，构造方法中指定的参数是不会被用作loadFactor的，
+     * 为了计算方便，统一使用 n - (n >> 2) 代替浮点乘法 *0.75
      */
     private static final float LOAD_FACTOR = 0.75f;
     /**
-     * Minimum number of rebinnings per transfer step. Ranges are
-     * subdivided to allow multiple resizer threads.  This value
-     * serves as a lower bound to avoid resizers encountering
-     * excessive memory contention.  The value should be at least
-     * DEFAULT_CAPACITY.
+     * @implNote 扩容操作中，transfer这个步骤是允许多线程的
+     * 这个常量表示一个线程执行transfer时，最少要对连续的16个hash桶进行transfer, 不足16就按16算
+     * 也就是单线程执行transfer时的最小任务量，单位为一个hash桶，这就是线程的transfer的步进（stride）
+     * 最小值是DEFAULT_CAPACITY，不使用太小的值，避免太小的值引起transfer时线程竞争过多，如果计算出来的值小于此值，就使用此值
+     * 正常步骤中会根据CPU核心数目来算出实际的，一个核心允许8个线程并发执行扩容操作的transfer步骤，这个8是个经验值，不能调整的
+     * 因为transfer操作不是IO操作，也不是死循环那种100%的CPU计算，CPU计算率中等，1核心允许8个线程并发完成扩容，理想情况下也算是比较合理的值
+     * 一段代码的IO操作越多，1核心对应的线程就要相应设置多点，CPU计算越多，1核心对应的线程就要相应设置少一些
+     * 表明：默认的容量是16，也就是默认构造的实例，第一次扩容实际上是单线程执行的，看上去是可以多线程并发（方法允许多个线程进入），
+     * 但是实际上其余的线程都会被一些if判断拦截掉，不会真正去执行扩容
      */
     private static final int MIN_TRANSFER_STRIDE = 16;
 
     /**
-     * For serialization compatibility.
+     * 在序列化时使用，这是为了兼容以前的版本
      */
     private static final ObjectStreamField[] serialPersistentFields = {
             new ObjectStreamField("segments", Segment[].class),
@@ -116,22 +150,32 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     /**
      * The number of bits used for generation stamp in sizeCtl.
      * Must be at least 6 for 32bit arrays.
-     * 用于生成每次扩容都唯一的生成戳的数，最小是6。很奇怪，这个值不是常量，但是也不提供修改方法。
+     *
+     * @implNote 用于生成每次扩容都唯一的生成戳的数，最小是6。
+     * @implSpec 很奇怪，这个值不是常量，但是也不提供修改方法。
      */
     private static int RESIZE_STAMP_BITS = 16;
+
     /**
      * The maximum number of threads that can help resize.
      * Must fit in 32 - RESIZE_STAMP_BITS bits.
-     * 最大的扩容线程的数量，如果上面的 RESIZE_STAMP_BITS = 32，那么此值为 0，这一点也很奇怪。
+     *
+     * @implNote 最大的扩容线程的数量
+     * @implSpec 如果上面的 RESIZE_STAMP_BITS = 32，那么此值为 0，这一点也很奇怪。
      */
     private static final int MAX_RESIZERS = (1 << (32 - RESIZE_STAMP_BITS)) - 1;
+
     /**
      * The bit shift for recording size stamp in sizeCtl.
-     * 移位量，把生成戳移位后保存在sizeCtl中当做扩容线程计数的基数，相反方向移位后能够反解出生成戳
+     *
+     * @implNote 移位量，把生成戳移位后保存在sizeCtl中当做扩容线程计数的基数，相反方向移位后能够反解出生成戳
      */
     private static final int RESIZE_STAMP_SHIFT = 32 - RESIZE_STAMP_BITS;
 
 
+    /**
+     * Unsafe
+     */
     static {
         try {
             // 通过反射获得unsafe实例.
@@ -158,57 +202,59 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * The array of bins. Lazily initialized upon first insertion.
-     * 大小必须是2的指数
+     * 大小必须是2的指数. 懒初始化.
      */
     transient volatile Node<K, V>[] table;
+
     /**
-     * 下一个用来替换的数组; 只有在resize的时候nextTable才不是null
+     * @implNote 扩容后的新的table数组，只有在resize的时候nextTable才不是null
+     * @implSpec nextTable != null，说明扩容方法还没有真正退出，一般可以认为是此时还有线程正在进行扩容
+     * @implSpec 极端情况需要考虑此时扩容操作只差最后给几个变量赋值（包括nextTable = null）的这个大的步骤，
+     * @implSpec 这个大步骤执行时，通过sizeCtl经过一些计算得出来的扩容线程的数量是0
      */
     private transient volatile Node<K, V>[] nextTable;
+
     /**
-     * Base counter value, used mainly when there is no contention,
-     * but also as a fallback during table initialization
-     * races. 这个值会用CAS来更新.
+     * 可以参考jdk1.8新引入的java.util.concurrent.atomic.LongAdder的源码，帮助理解
+     * 计数器基本值，主要在没有碰到多线程竞争时使用，需要通过CAS进行更新
      */
     private transient volatile long baseCount;
 
-
-    // 非常重要的一个属性，源码中的英文翻译，直译过来是下面的四行文字的意思
-    //     sizeCtl = -1，表示有线程正在进行真正的初始化操作
-    //     sizeCtl = -(1 + nThreads)，表示有nThreads个线程正在进行扩容操作
-    //     sizeCtl > 0，表示接下来的真正的初始化操作中使用的容量，或者初始化/扩容完成后的threshold
-    //     sizeCtl = 0，默认值，此时在真正的初始化操作中使用默认容量
-    // 但是，通过我对源码的理解，这段注释实际上是有问题的，
-    //     有问题的是第二句，sizeCtl = -(1 + nThreads)这个，网上好多都是用第二句的直接翻译去解释代码，这样理解是错误的
-    // 默认构造的16个大小的ConcurrentHashMap，只有一个线程执行扩容时，sizeCtl = -2145714174，
-    //     但是照这段英文注释的意思，sizeCtl的值应该是 -(1 + 1) = -2
-    // sizeCtl在小于0时的确有记录有多少个线程正在执行扩容任务的功能，但是不是这段英文注释说的那样直接用 -(1 + nThreads)
-    // 实际中使用了一种生成戳，根据生成戳算出一个基数，不同轮次的扩容操作的生成戳都是唯一的，来保证多次扩容之间不会交叉重叠，
-    //     当有n个线程正在执行扩容时，sizeCtl在值变为 (基数 + n)
-    // 1.8.0_111的源码的383-384行写了个说明：A generation stamp in field sizeCtl ensures that resizings do not overlap.
     /**
-     * Table initialization and resizing control.  When negative, the
-     * table is being initialized or resized: -1 for initialization,
-     * else -(1 + the number of active resizing threads).  Otherwise,
-     * when table is null, holds the initial table size to use upon
-     * creation, or 0 for default. After initialization, holds the
-     * next element count value upon which to resize the table.
+     * @implNote sizeCtl = -1，表示有线程正在进行真正的初始化操作
+     * @implNote sizeCtl = -(1 + nThreads)，表示有nThreads个线程正在进行扩容操作
+     * @implNote sizeCtl > 0，表示接下来的真正的初始化操作中使用的容量，或者初始化/扩容完成后的threshold
+     * @implNote sizeCtl = 0，默认值，此时在真正的初始化操作中使用默认容量
+     * @implSpec 有问题的是第二句，sizeCtl = -(1 + nThreads)这个，网上好多都是用第二句的直接翻译去解释代码，这样理解是错误的
+     * 默认构造的16个大小的ConcurrentHashMap，只有一个线程执行扩容时，sizeCtl = -2145714174，
+     * 但是照这段英文注释的意思，sizeCtl的值应该是 -(1 + 1) = -2
+     * sizeCtl在小于0时的确有记录有多少个线程正在执行扩容任务的功能，但是不是这段英文注释说的那样直接用 -(1 + nThreads)
+     * 实际中使用了一种生成戳，根据生成戳算出一个基数，不同轮次的扩容操作的生成戳都是唯一的，来保证多次扩容之间不会交叉重叠，
+     * 当有n个线程正在执行扩容时，sizeCtl在值变为 (基数 + n)
+     * 1.8.0_111的源码的383-384行写了个说明：A generation stamp in field sizeCtl ensures that resizings do not overlap.
      */
     private transient volatile int sizeCtl;
 
     /**
-     * The next table index (plus one) to split while resizing.
-     * transferIndex 表示转移时的下标，初始为扩容前的 length
+     * @implNote 下一个transfer任务的起始下标index 加上1 之后的值，transfer时下标index从length - 1开始往0走
+     * @implNote transfer时方向是倒过来的，迭代时是下标从小往大，二者方向相反，尽量减少扩容时transfer和迭代两者同时处理一个hash桶的情况，
+     * 顺序相反时，二者相遇过后，迭代没处理的都是已经transfer的hash桶，transfer没处理的，都是已经迭代的hash桶，冲突会变少
+     * @implNote 下标在[nextIndex - 实际的stride （下界要 >= 0）, nextIndex - 1]内的hash桶，就是每个transfer的任务区间
+     * @implNote 每次接受一个transfer任务，都要CAS执行 transferIndex = transferIndex - 实际的stride，
+     * 保证一个transfer任务不会被几个线程同时获取（相当于任务队列的size减1）
+     * @implNote 当没有线程正在执行transfer任务时，一定有transferIndex <= 0，
+     * 这是判断是否需要帮助扩容的重要条件（相当于任务队列为空）
      */
     private transient volatile int transferIndex;
 
     /**
-     * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+     * CAS自旋锁标志位，用于初始化，或者counterCells扩容时
      */
     private transient volatile int cellsBusy;
 
     /**
-     * Table of counter cells. 不是null的时候, 大小是2的指数
+     * @implSpec 不是null的时候, 大小是2的指数
+     * @implNote 用于高并发的计数单元.
      */
     private transient volatile CounterCell[] counterCells;
 
@@ -218,7 +264,6 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     private transient EntrySetView<K, V> entrySet;
 
     /**
-     * Creates a new, empty map with the default initial table size (16).
      * 无参构造器里面是空实现. 默认桶个数是16
      */
     public MyConcurrentHashMap() {
@@ -252,6 +297,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
+     *
      */
     public MyConcurrentHashMap(int initialCapacity, float loadFactor, int concurrencyLevel) {
         if (!(loadFactor > 0.0f) || initialCapacity < 0 || concurrencyLevel <= 0) throw new IllegalArgumentException();
@@ -457,8 +503,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * 根据value来找值
      */
     public boolean containsValue(Object value) {
-        if (value == null)
-            throw new NullPointerException();
+        if (value == null) throw new NullPointerException();
         Node<K, V>[] t;
         if ((t = table) != null) {
             Traverser<K, V> it = new Traverser<K, V>(t, t.length, 0, t.length);
@@ -3512,13 +3557,13 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * for a table read.
      */
     static class Traverser<K, V> {
-        final int baseSize;     // initial table size
-        Node<K, V>[] tab;        // current table; updated if resized
-        Node<K, V> next;         // the next entry to use
-        TableStack<K, V> stack, spare; // to save/restore on ForwardingNodes
-        int index;              // index of bin to use next
-        int baseIndex;          // current index of initial table
-        int baseLimit;          // index bound for initial table
+        final int baseSize;     // initial table size.  数组的长度
+        Node<K, V>[] tab;        // current table; updated if resized.   当前数组，也就是扩容完成后的旧数组
+        Node<K, V> next;         // the next entry to use.   新数组，扩容完成后使用的数组
+        TableStack<K, V> stack, spare; // to save/restore on ForwardingNodes.   用来 保存/恢复 转发节点
+        int index;              // index of bin to use next.   下一个要读取的hash桶的下标
+        int baseIndex;          // current index of initial table.   起始的下标，下界
+        int baseLimit;          // index bound for initial table.   终止的下标，上界
 
         Traverser(Node<K, V>[] tab, int size, int index, int limit) {
             this.tab = tab;
@@ -3530,9 +3575,11 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
         /**
          * Advances if possible, returning next valid node, or null if none.
+         * 遍历器的指针往前移动到下一个有实际数据节点，并返回这个节点，如果到头就返回null
          */
         final Node<K, V> advance() {
             Node<K, V> e;
+            // 如果已经进入了一个非空的hash桶，直接尝试获取它的下一个节点
             if ((e = next) != null)
                 e = e.next;
             for (; ; ) {
@@ -3540,22 +3587,32 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 int i, n;  // must use locals in checks
                 if (e != null)
                     return next = e;
-                if (baseIndex >= baseLimit || (t = tab) == null ||
-                        (n = t.length) <= (i = index) || i < 0)
+                // 一些边界判断，遍历越界了表明没有了，可以直接返回null
+                if (baseIndex >= baseLimit || (t = tab) == null || (n = t.length) <= (i = index) || i < 0)
                     return next = null;
+                // 处理特殊节点
                 if ((e = tabAt(t, i)) != null && e.hash < 0) {
+                    // `转发节点`，主要处理这个
                     if (e instanceof ForwardingNode) {
+                        // 将遍历迁移到FN.nextTable新数组上进行
                         tab = ((ForwardingNode<K, V>) e).nextTable;
                         e = null;
+                        // 入栈保存当前对tab数组的遍历信息
                         pushState(t, i, n);
+                        // 开始新一次循环，遍历nextTable中对应的hash桶
                         continue;
+                        // TreeBin时，获取红黑树所有节点的链表形式的头节点，使用链表的方式遍历，更简单
                     } else if (e instanceof TreeBin)
                         e = ((TreeBin<K, V>) e).first;
+                        // 保留节点，没实际数据
                     else
                         e = null;
                 }
+                // 栈不为空
                 if (stack != null)
+                    // 这里可以看做是出栈操作，得先遍历完FN.nextTable中的两个之后再出栈
                     recoverState(n);
+                    // 栈为空，准备遍历下一个hash桶
                 else if ((index = i + baseSize) >= n)
                     index = ++baseIndex; // visit upper slots if present
             }
@@ -3563,6 +3620,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
         /**
          * Saves traversal state upon encountering a forwarding node.
+         * 入栈操作，保存当前对tab的遍历信息
          */
         private void pushState(Node<K, V>[] t, int i, int n) {
             TableStack<K, V> s = spare;  // reuse if possible
@@ -3579,6 +3637,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
         /**
          * Possibly pops traversal state.
+         * 可能会出栈，不出栈时，更改索引，准备遍历的是FN.nextTable中对应的第二个hash桶
          *
          * @param n length of current table
          */
