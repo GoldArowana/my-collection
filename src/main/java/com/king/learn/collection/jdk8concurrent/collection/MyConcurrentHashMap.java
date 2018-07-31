@@ -570,24 +570,21 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         for (Node<K, V>[] tab = table; ; ) {
             Node<K, V> f;
             int n, i, fh;
-            // 如果Node数组为空，则先进行初始化
-            // 初始化 table，因 table 是懒加载
-            // 处理初始化，并发的情况在initTable中处理，这里不考虑
+
+            // 如果没有初始化 table，说明是第一次put. 那么就在这里初始化. table 是懒加载
+
             if (tab == null || (n = tab.length) == 0)
-                // 初始化数组
+                // 初始化数组, 并发的情况在initTable中处理，这里不考虑
+                // 初始化完了之后, 由于外层是for循环, 所以会进入到下一次for循环中. 下一次就不会执行这里了.
                 tab = initTable();
 
-                // 获取table中对应索引的元素，如果为空，则用初始化一个Node节点并用CAS插入
-                // 找该 hash 值对应的数组下标，得到第一个节点 f
+                // 找该 hash 值对应的数组下标，得到该桶内的元素 f
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
-                // 如果数组该位置为空，
-                //    用一次 CAS 操作将这个新值放入其中即可，这个 put 操作差不多就结束了，可以拉到最后面了
-                //          如果 CAS 失败，那就是有并发操作，进到下一个循环就好了
-                // 如果所存位置没有元素，即不会冲突，直接利用 CAS 进行插入即可。
-                // 使用CAS添加第一个节点
+                // 如果数组该位置为空，用一次 CAS 操作将这个新值放入其中即可，这个 put 操作差不多就结束了
+                // 如果 CAS 失败，那就是有并发操作，进到下一个循环就好了
                 if (casTabAt(tab, i, null, new Node<K, V>(hash, key, value, null)))
                     // 如果CAS插入成功，说明Node节点已经插入，跳出循环
-                    break;                   // no lock when adding to empty bin
+                    break;                                    // no lock when adding to empty bin
 
                 // 如果正在动态扩容，则一起进行扩容操作
                 // hash 居然可以等于 MOVED，这个需要到后面才能看明白，不过从名字上也能猜到，肯定是因为在扩容
@@ -595,25 +592,22 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             } else if ((fh = f.hash) == MOVED)
                 // 帮助数据迁移，这个等到看完数据迁移部分的介绍后，再理解这个就很简单了
                 tab = helpTransfer(tab, f);
-            else {// 到这里就是说，f 是该位置的头结点，而且不为空
+
+                // 到这里就是说，f 是该位置的头结点，而且不为空
+            else {
                 V oldVal = null;
-                // 直接 synchronized，取代分段锁
-                // 获取数组该位置的头结点的监视器锁
-                // 采用同步锁实现并发，把新的Node节点按链表或红黑树的方式插入到合适的位置
+                // 直接 synchronized 该位置的头结点，取代分段锁,把新的Node节点按链表或红黑树的方式插入到合适的位置
                 synchronized (f) {
                     // 保证锁住的是hash桶的第一个节点，这样阻止其他写操作进入，如果锁住的不是第一个节点，那么重新开始循环
                     if (tabAt(tab, i) == f) {
-                        // 从链表转换成红黑树时，会将Node转换为TreeNode
-                        if (fh >= 0) {// 头结点的 hash 值大于 0，说明是链表
-                            // 用于累加，记录链表的长度
-                            // 因为第一个节点处理了，这里赋值为1
+                        // 从链表转换成红黑树时，会将Node转换为TreeNode, 头结点的 hash 值大于 0，说明是链表
+                        if (fh >= 0) {
+                            // 用于累加，记录链表的长度, 因为第一个节点处理了，这里赋值为1
                             binCount = 1;
                             // 遍历链表并插入
                             for (Node<K, V> e = f; ; ++binCount) {
                                 K ek;
-                                // 如果已经存在对应的key，判断是否需要更新
                                 // 如果发现了"相等"的 key，判断是否要进行值覆盖，然后也就可以 break 了
-                                // 找到“相等”的节点，看看是否需要更新value的值
                                 if (e.hash == hash && ((ek = e.key) == key || (ek != null && key.equals(ek)))) {
                                     oldVal = e.value;
                                     // 判断onlyIfAbsent，即是否不存在才插入。如果是不存在的时候才插入，则略过不更新
@@ -621,14 +615,12 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                         e.value = value;
                                     break;
                                 }
-                                // 到了链表的最末端，将这个新值放到链表的最后面
                                 Node<K, V> pred = e;
                                 // 如果插入Node没有后续节点，则初始化一个Node
                                 // 遍历到链表末尾还没碰见“相等”，那么就添加新节点到链表的末尾
                                 // 1.8开始是末尾添加，后面的remove/replace也会尝试锁住第一个节点，这样就能保证锁住hash桶的第一个节点能够阻塞其他基本的写操作
                                 if ((e = e.next) == null) {
-                                    pred.next = new Node<K, V>(hash, key,
-                                            value, null);
+                                    pred.next = new Node<K, V>(hash, key, value, null);
                                     break;
                                 }
                             }
@@ -639,8 +631,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             // 设置为2，保证addCount中能够进行扩容判断，同时也不会触发链表转化为红黑树的操作
                             binCount = 2;
                             // 调用红黑树的插值方法插入新节点
-                            if ((p = ((TreeBin<K, V>) f).putTreeVal(hash, key,
-                                    value)) != null) {
+                            if ((p = ((TreeBin<K, V>) f).putTreeVal(hash, key, value)) != null) {
                                 oldVal = p.value;
                                 if (!onlyIfAbsent)
                                     p.value = value;
@@ -651,14 +642,12 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 // binCount != 0 说明上面在做链表操作
                 if (binCount != 0) {
                     // 如果元素大于等于8个，则转换为红黑树
-                    // 判断是否要将链表转换为红黑树，临界值和 HashMap 一样，也是 8
-                    // 添加之前，一个hash桶中的节点数目达到阈值，尝试转化为红黑树保存
                     if (binCount >= TREEIFY_THRESHOLD)
                         // 这个方法和 HashMap 中稍微有一点点不同，那就是它不是一定会进行红黑树转换，
                         // 如果当前数组的长度小于 64，那么会选择进行数组扩容，而不是转换为红黑树
-                        //    具体源码我们就不看了，扩容部分后面说
                         treeifyBin(tab, i);
-                    // 表明实质上是replace操作，不用更改计数值
+
+                    // 如果oldVal不是null, 说明是replace操作，那么就不用更改计数值了, 直接return
                     if (oldVal != null)
                         return oldVal;
                     break;
@@ -1601,43 +1590,38 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * 初始化桶. sizeCtl在初始化期间设置为 -1，用于同步控制多线程同时进行初始化
-     * // 真正的初始化方法，使用保存在sizeCtl中的数据作为初始化容量
+     * 初始化桶数组.
+     * 这里才是真正的初始化方法，使用保存在sizeCtl中的数据作为初始化容量
+     * sizeCtl在初始化期间设置为 -1，用于同步控制多线程同时进行初始化
      */
     private final Node<K, V>[] initTable() {
         Node<K, V>[] tab;
         int sc;
         while ((tab = table) == null || tab.length == 0) {
-            // 如果一个线程发现sizeCtl<0，意味着另外的线程执行CAS操作成功，当前线程只需要让出cpu时间片
-            // 初始化的"功劳"被其他线程"抢去"了
-            // 看前面sizeCtl这个重要变量的注释
+            // 如果一个线程发现sizeCtl<0，意味着另外的线程执行CAS操作成功，初始化的"功劳"被其他线程"抢去"了
             if ((sc = sizeCtl) < 0)
-                // 真正的初始化是要禁止并发的，保证tables数组只被初始化一次，但是又不能切换线程，所以用yeild()暂时让出CPU
+                // 保证tables数组只被初始化一次，竞争失败了，所以用yeild()暂时让出CPU时间片
                 Thread.yield(); // lost initialization race; just spin
 
-                // CAS 一下，将 sizeCtl 设置为 -1，代表抢到了锁
-                // 如果sizeCtl不小于0，尝试将sizeCtl设置为 -1，成功则进行初始化操作
-                // CAS更新sizeCtl标识为 "初始化" 状态
+                // 如果sizeCtl不小于0，尝试将sizeCtl设置为 -1 "初始化" 状态，成功则进行初始化操作, 代表抢到了锁
             else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
                 try {
                     // 检查table数组是否已经被初始化，没初始化就真正初始化
                     if ((tab = table) == null || tab.length == 0) {
-                        // DEFAULT_CAPACITY 默认初始容量是 16
+                        // DEFAULT_CAPACITY 默认初始容量(初始通数组大小)是 16
                         int n = (sc > 0) ? sc : DEFAULT_CAPACITY;
                         // 初始化数组，长度为 16 或初始化时提供的长度
                         @SuppressWarnings("unchecked")
                         Node<K, V>[] nt = (Node<K, V>[]) new Node<?, ?>[n];
                         // 将这个数组赋值给 table，table 是 volatile 的
                         table = tab = nt;
+
+                        // sc == n - (1/4)*n  == (3/4)*n == 0.75*n
                         // 如果 n 为 16 的话，那么这里 sc = 12
-                        // 其实就是 0.75 * n
-                        // sc = threshold，n - (n >>> 2) = n - n/4 = 0.75n，前面说了loadFactor没用了，这里看出，统一用0.75f了
                         sc = n - (n >>> 2);
                     }
                 } finally {
-                    // 设置 sizeCtl 为 sc，我们就当是 12 吧
-                    // 设置Node数组容量
-                    // 设置threshold
+                    // 设置 sizeCtl 为 sc， 默认时是 12
                     sizeCtl = sc;
                 }
                 break;
@@ -1647,28 +1631,21 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Adds to count, and if table is too small and not already
-     * resizing, initiates transfer. If already resizing, helps
-     * perform transfer if work is available.  Rechecks occupancy
-     * after a transfer to see if another resize is already needed
-     * because resizings are lagging additions.
-     * // 更改计数值，这部分相关是仿造LongAdder实现的，已经说过了
-     * // 检查是否触发了扩容，是否正在扩容，是否可以帮助扩容
-     * // 并且还要检查是否会触发下一次扩容，因为更改计数值的操作是不在加锁区域内的，扩容过程中可能还有别的线程添加了很多K-V
-     * // 参数check，用于指示计数操作是否会触发扩容，check < 0 代表一定不会触发，
-     * //     check <= 1时，只在没有计数时线程竞争才会触发扩容，check > 0 时，也表示的是hash桶中节点的数目
-     * // 普通的put可能会触发，Map拷贝构造中的putAll，因为事先扩容了，所以这个putAll不会触发扩容
+     * 更改计数值，这部分相关是仿造LongAdder实现的
+     * 检查是否触发了扩容，是否正在扩容，是否可以帮助扩容
+     * 并且还要检查是否会触发下一次扩容，因为更改计数值的操作是不在加锁区域内的，扩容过程中可能还有别的线程添加了很多K-V
+     * 参数check，用于指示计数操作是否会触发扩容，check < 0 代表一定不会触发，
+     * check <= 1时，只在没有计数时线程竞争才会触发扩容，check > 0 时，也表示的是hash桶中节点的数目
+     * 普通的put可能会触发，Map拷贝构造中的putAll，因为事先扩容了，所以这个putAll不会触发扩容
      *
      * @param x     the count to add
      * @param check if <0, don't check resize, if <= 1 only check if uncontended
-     *              <p>
-     *              <p>
      */
     private final void addCount(long x, int check) {
-        // 先按照LongAdder实现，把计数器的值变更，
         CounterCell[] as;
         long b, s;
-        if ((as = counterCells) != null || !U.compareAndSwapLong(this, BASECOUNT, b = baseCount, s = b + x)) {
+        if ((as = counterCells) != null ||
+                !U.compareAndSwapLong(this, BASECOUNT, b = baseCount, s = b + x)) {
             CounterCell a;
             long v;
             int m;
@@ -1691,10 +1668,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         if (check >= 0) {
             Node<K, V>[] tab, nt;
             int n, sc;
-            // 这里在第3点中详细说了，三个连续的赋值中间可能会插入其他线程的代码，改变了某些值，造成三个局部变量最后不匹配，出现扩容重叠
+            // 三个连续的赋值中间可能会插入其他线程的代码，改变了某些值，造成三个局部变量最后不匹配，出现扩容重叠
             // 使用resizeStamp机制避免了这种扩容重叠
-            while (s >= (long) (sc = sizeCtl) && (tab = table) != null &&
-                    (n = tab.length) < MAXIMUM_CAPACITY) {
+            while (s >= (long) (sc = sizeCtl) && (tab = table) != null && (n = tab.length) < MAXIMUM_CAPACITY) {
                 // 计算本次扩容生成戳
                 int rs = resizeStamp(n);
                 // sc < 0 表明此时有别的线程正在进行扩容
@@ -1771,7 +1747,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      */
     private final void tryPresize(int size) {
         // c：size 的 1.5 倍，再加 1，再往上取最近的 2 的 n 次方。
-        int c = (size >= (MAXIMUM_CAPACITY >>> 1)) ? MAXIMUM_CAPACITY :
+        int c = (size >= (MAXIMUM_CAPACITY >>> 1)) ?
+                MAXIMUM_CAPACITY :
                 tableSizeFor(size + (size >>> 1) + 1);
         int sc;
         while ((sc = sizeCtl) >= 0) {
@@ -1815,10 +1792,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                     if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1))
                         // 去帮助执行transfer任务
                         transfer(tab, nt);
+
                     // 1. 将 sizeCtl 设置为 (rs << RESIZE_STAMP_SHIFT) + 2)
                     //     我是没看懂这个值真正的意义是什么？不过可以计算出来的是，结果是一个比较大的负数
-                    //  调用 transfer 方法，此时 nextTab 参数为 null
-                    // 试着让自己成为第一个执行transfer任务的线程，这个位运算前面分析了
                 } else if (U.compareAndSwapInt(this, SIZECTL, sc, (rs << RESIZE_STAMP_SHIFT) + 2))
                     // 去执行transfer任务
                     transfer(tab, null);
@@ -1827,26 +1803,27 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Moves and/or copies the nodes in each bin to new table. See
-     * above for explanation.
+     * @implNote 执行节点迁移，准确地说是迁移内容，因为很多节点都需要进行复制，复制能够保证读操作尽量不受影响
+     * @implSpec 此方法支持多线程执行，外围调用此方法的时候，会保证第一个发起数据迁移的线程，
+     * nextTab 参数为 null，之后再调用此方法的时候，nextTab 不会为 null。
      * <p>
-     * 虽然我们之前说的 tryPresize 方法中多次调用 transfer 不涉及多线程，但是这个 transfer 方法可以在其他地方被调用，典型地，我们之前在说 put 方法的时候就说过了，请往上看 put 方法，是不是有个地方调用了 helpTransfer 方法，helpTransfer 方法会调用 transfer 方法的。
+     * @implSpec 阅读源码之前，先要理解并发操作的机制。原数组长度为 n，所以我们有 n 个迁移任务，
+     * 让每个线程每次负责一个小任务是最简单的，每做完一个任务再检测是否有其他没做完的任务，
+     * 帮助迁移就可以了，而 Doug Lea 使用了一个 stride，简单理解就是步长，
+     * 每个线程每次负责迁移其中的一部分，如每次迁移 16 个小任务。
+     * 所以，我们就需要一个全局的调度者来安排哪个线程执行哪几个任务，这个就是属性 transferIndex 的作用。
      * <p>
-     * 此方法支持多线程执行，外围调用此方法的时候，会保证第一个发起数据迁移的线程，nextTab 参数为 null，之后再调用此方法的时候，nextTab 不会为 null。
+     * @implSpec 第一个发起数据迁移的线程会将 transferIndex 指向原数组最后的位置，
+     * 然后从后往前的 stride 个任务属于第一个线程，然后将 transferIndex 指向新的位置，
+     * 再往前的 stride 个任务属于第二个线程，依此类推。
+     * 当然，这里说的第二个线程不是真的一定指代了第二个线程，也可以是同一个线程。
+     * 其实就是将一个大的迁移任务分为了一个个任务包。
      * <p>
-     * 阅读源码之前，先要理解并发操作的机制。原数组长度为 n，所以我们有 n 个迁移任务，让每个线程每次负责一个小任务是最简单的，每做完一个任务再检测是否有其他没做完的任务，帮助迁移就可以了，而 Doug Lea 使用了一个 stride，简单理解就是步长，每个线程每次负责迁移其中的一部分，如每次迁移 16 个小任务。所以，我们就需要一个全局的调度者来安排哪个线程执行哪几个任务，这个就是属性 transferIndex 的作用。
-     * <p>
-     * 第一个发起数据迁移的线程会将 transferIndex 指向原数组最后的位置，然后从后往前的 stride 个任务属于第一个线程，然后将 transferIndex 指向新的位置，再往前的 stride 个任务属于第二个线程，依此类推。当然，这里说的第二个线程不是真的一定指代了第二个线程，也可以是同一个线程，这个读者应该能理解吧。其实就是将一个大的迁移任务分为了一个个任务包。
-     * <p>
-     * // 执行节点迁移，准确地说是迁移内容，因为很多节点都需要进行复制，复制能够保证读操作尽量不受影响
      */
     private final void transfer(Node<K, V>[] tab, Node<K, V>[] nextTab) {
         int n = tab.length, stride;
         // stride 在单核下直接等于 n，多核模式下为 (n>>>3)/NCPU，最小值是 16
-        // stride 可以理解为”步长“，有 n 个位置是需要进行迁移的，
-        //   将这 n 个任务分为多个任务包，每个任务包有 stride 个任务
-        // 每核处理的量小于16，则强制赋值16
-        // 计算每个transfer任务中要负责迁移多少个hash桶
+        // stride 可以理解为”步长“，有 n 个位置是需要进行迁移的，每stride个为一个任务.
         if ((stride = (NCPU > 1) ? (n >>> 3) / NCPU : n) < MIN_TRANSFER_STRIDE)
             stride = MIN_TRANSFER_STRIDE; // subdivide range
         // 如果 nextTab 为 null，先进行一次初始化
@@ -1858,7 +1835,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                 @SuppressWarnings("unchecked")
                 Node<K, V>[] nt = (Node<K, V>[]) new Node<?, ?>[n << 1];
                 nextTab = nt;
-                // try to cope with OOME 处理内存不足导致的OOM，以及table数组超过最大长度，这两种情况都实际上无法再进行扩容了
+
+                // 处理内存不足导致的OOM，以及table数组超过最大长度，这两种情况都实际上无法再进行扩容了
             } catch (Throwable ex) {      // try to cope with OOME
                 sizeCtl = Integer.MAX_VALUE;
                 return;
@@ -1870,47 +1848,38 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             transferIndex = n;
         }
         int nextn = nextTab.length;
-        // ForwardingNode 翻译过来就是正在被迁移的 Node
-        // 这个构造方法会生成一个Node，key、value 和 next 都为 null，关键是 hash 为 MOVED
-        // 后面我们会看到，原数组中位置 i 处的节点完成迁移工作后，
-        //    就会将位置 i 处设置为这个 ForwardingNode，用来告诉其他线程该位置已经处理过了
-        //    所以它其实相当于是一个标志。
-        // 转发节点，在旧数组的一个hash桶中所有节点都被迁移完后，放置在这个hash桶中，表明已经迁移完，对它的读操作会转发到新数组
+
+        // ForwardingNode, 表示正在被迁移的 Node.
+        // 原数组中位置 i 处的节点完成迁移工作后，就会将位置 i 处设置为这个 ForwardingNode，
+        // 用来告诉其他线程该位置已经处理过了
+        // 这个Node的 key、value 和 next 都为 null, hash值 为 MOVED (-1).
+        // 并且含有nextTable的指针.可以把对它的读操作会转发到新数组
         ForwardingNode<K, V> fwd = new ForwardingNode<K, V>(nextTab);
         // advance 指的是做完了一个位置的迁移工作，可以准备做下一个位置的了
         boolean advance = true;
         // 扩容中收尾的线程把做个值设置为true，进行本轮扩容的收尾工作（两件事，重新检查一次所有hash桶，给属性赋新值）
         boolean finishing = false; // to ensure sweep before committing nextTab
 
-        /*
-         * 下面这个 for 循环，最难理解的在前面，而要看懂它们，应该先看懂后面的，然后再倒回来看
-         *
-         */
         // i 是位置索引，bound 是边界，注意是从后往前
         for (int i = 0, bound = 0; ; ) {
             Node<K, V> f;
             int fh;
-            // 下面这个 while 真的是不好理解
             // advance 为 true 表示可以进行下一个位置的迁移了
-            //   简单理解结局：i 指向了 transferIndex，bound 指向了 transferIndex-stride
-            // while中的代码可以看成是预处理
+            // 最终: i 指向了 transferIndex，bound 指向了 transferIndex-stride
             while (advance) {
                 int nextIndex, nextBound;
                 // 一次transfer任务还没有执行完毕
                 if (--i >= bound || finishing)
                     advance = false;
-                    // 将 transferIndex 值赋给 nextIndex
-                    // 这里 transferIndex 一旦小于等于 0，说明原数组的所有位置都有相应的线程去处理了
-                    // transfer任务已经没有了，表明可以准备退出扩容了
+
+                    // 这里 transferIndex 一旦小于等于 0，说明原数组的所有位置都有相应的线程去处理了, 表明可以准备退出扩容了
                 else if ((nextIndex = transferIndex) <= 0) {
                     i = -1;
                     advance = false;
 
                     // 尝试申请一个transfer任务
-                } else if (U.compareAndSwapInt
-                        (this, TRANSFERINDEX, nextIndex,
-                                nextBound = (nextIndex > stride ?
-                                        nextIndex - stride : 0))) {
+                } else if (U.compareAndSwapInt(this, TRANSFERINDEX, nextIndex,
+                        nextBound = (nextIndex > stride ? nextIndex - stride : 0))) {
                     // 看括号中的代码，nextBound 是这次迁移任务的边界，注意，是从后往前
                     // 申请到任务后标记自己的任务区间
                     bound = nextBound;
@@ -1918,14 +1887,14 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                     advance = false;
                 }
             }
-            // 这个分支中有处理 扩容重叠，但是前面第3点分析了，到这里应该是不会出现扩容重叠的
+            // 这个分支中有处理 扩容重叠，但是到这里应该是不会出现扩容重叠的
+            // i < 0 表明本次的transfer任务已经执行完毕了，此时需要准备退出这个方法，这个好理解
+            // i >= n 表明扩容轮次跟预想的不一样（比如这个线程预想的是进行n -> 2n的扩容，实际nextTab是4n数组），此时不能进行节点迁移（第3点分析了一部分）
+            //     虽然申请到了任务，但是也不能执行，应该准备退出方法，此次任务作废，别的线程也不能领取了，只能让此轮扩容中最后一个线程在重新检查时处理掉
+            // i + n >= nextn，这个我不知道怎么理解，此时前面两个条件为false，那么就有 0 < i < n，也就是 n < i + n < 2n，这个是一定成立的
+            //     因为nextn最小也是2n，i + n 怎么也比2n小，所以我觉得奇怪，不知道这个条件判断的是什么情况
             if (i < 0 || i >= n || i + n >= nextn) {
                 int sc;
-                // i < 0 表明本次的transfer任务已经执行完毕了，此时需要准备退出这个方法，这个好理解
-                // i >= n 表明扩容轮次跟预想的不一样（比如这个线程预想的是进行n -> 2n的扩容，实际nextTab是4n数组），此时不能进行节点迁移（第3点分析了一部分）
-                //     虽然申请到了任务，但是也不能执行，应该准备退出方法，此次任务作废，别的线程也不能领取了，只能让此轮扩容中最后一个线程在重新检查时处理掉
-                // i + n >= nextn，这个我不知道怎么理解，此时前面两个条件为false，那么就有 0 < i < n，也就是 n < i + n < 2n，这个是一定成立的
-                //     因为nextn最小也是2n，i + n 怎么也比2n小，所以我觉得奇怪，不知道这个条件判断的是什么情况
                 if (finishing) {
                     // 执行本轮扩容的收尾工作
                     // 所有的迁移操作已经完成
@@ -1955,16 +1924,16 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                     // 此时这个线程领取的任务会作废，那么最后检查时，还要处理因为作废二没有被迁移的hash桶，把它们正确迁移到新数组中
                     i = n; // recheck before commit
                 }
-                // 如果位置 i 处是空的，没有任何节点，那么放入刚刚初始化的 ForwardingNode ”空节点“
+                // 如果位置 i 处是空的，没有任何节点，那么放入刚刚初始化的 ForwardingNode节点
                 // hash桶本身为null，不用迁移，直接尝试安放一个转发节点
-            } else if ((f = tabAt(tab, i)) == null)
+            } else if ((f = tabAt(tab, i)) == null) {
                 advance = casTabAt(tab, i, null, fwd);
                 // 该位置处是一个 ForwardingNode，代表该位置已经迁移过了
                 // 正常情况下，重新检查时，总是执行这个分支。
                 // 出现扩容重叠，有transfer任务被作废的情况下，会执行其他分支，处理因为作废而没有被迁移的hash桶
-            else if ((fh = f.hash) == MOVED)
+            } else if ((fh = f.hash) == MOVED) {
                 advance = true; // already processed
-            else {
+            } else {
                 // 对数组该位置处的结点加锁，开始处理数组该位置处的迁移工作
                 synchronized (f) {
                     // 判断下加锁的节点仍然是hash桶中的第一个节点，加锁的是第一个节点才算加锁成功
@@ -1972,11 +1941,10 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                         Node<K, V> ln, hn;
                         // 头结点的 hash 大于 0，说明是链表的 Node 节点
                         if (fh >= 0) {
-                            // 下面这一块和 Java7 中的 ConcurrentHashMap 迁移是差不多的，
+
                             // 需要将链表一分为二，
                             //   找到原链表中的 lastRun，然后 lastRun 及其之后的节点是一起进行迁移的
                             //   lastRun 之前的节点需要进行克隆，然后分到两个链表中
-                            // 下面这段代码，使用高低位，跟1.6/1.7的使用 & 的效果基本一样
                             int runBit = fh & n;
                             Node<K, V> lastRun = f;
                             // 尽量重用Node链表尾部的一部分（起码能重用一个，实际情况下能重用比较多的节点，这时候就提高了效率）
@@ -2006,14 +1974,10 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                                     hn = new Node<K, V>(ph, pk, pv, hn);
                             }
                             // 其中的一个链表放在新数组的位置 i
-                            // 放在新table的hash桶中
                             setTabAt(nextTab, i, ln);
                             // 另一个链表放在新数组的位置 i+n
-                            // 放在新table的hash桶中
                             setTabAt(nextTab, i + n, hn);
-                            // 将原数组该位置处设置为 fwd，代表该位置已经处理完毕，
-                            //    其他线程一旦看到该位置的 hash 值为 MOVED，就不会进行迁移了
-                            // 把旧table的hash桶中放置转发节点，表明此hash桶已经被处理
+                            // 将原数组该位置处设置为 fwd(转发节点)，代表该位置已经处理完毕，其他线程一旦看到该位置的 hash 值为 MOVED，就不会进行迁移了
                             setTabAt(tab, i, fwd);
                             // advance 设置为 true，代表该位置已经迁移完毕
                             advance = true;
@@ -2177,9 +2141,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         Node<K, V> b;
         int n, sc;
         if (tab != null) {
-            // MIN_TREEIFY_CAPACITY 为 64
-            // 所以，如果数组长度小于 64 的时候，其实也就是 32 或者 16 或者更小的时候，会进行数组扩容
-            // Map的容量不够时，只是进行一次扩容
+            // 如果数组长度小于 64 的时候，其实也就是 32 或者 16 或者更小的时候，会进行数组扩容
             if ((n = tab.length) < MIN_TREEIFY_CAPACITY)
                 // 后面我们再详细分析这个方法
                 tryPresize(n << 1);
@@ -6049,12 +6011,11 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
         int result;
         MapReduceKeysToIntTask<K, V> rights, nextRight;
 
-        MapReduceKeysToIntTask
-                (BulkTask<K, V, ?> p, int b, int i, int f, Node<K, V>[] t,
-                 MapReduceKeysToIntTask<K, V> nextRight,
-                 ToIntFunction<? super K> transformer,
-                 int basis,
-                 IntBinaryOperator reducer) {
+        MapReduceKeysToIntTask(BulkTask<K, V, ?> p, int b, int i, int f, Node<K, V>[] t,
+                               MapReduceKeysToIntTask<K, V> nextRight,
+                               ToIntFunction<? super K> transformer,
+                               int basis,
+                               IntBinaryOperator reducer) {
             super(p, b, i, f, t);
             this.nextRight = nextRight;
             this.transformer = transformer;
