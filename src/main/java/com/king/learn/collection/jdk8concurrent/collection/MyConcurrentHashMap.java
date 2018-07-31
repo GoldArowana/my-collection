@@ -2801,7 +2801,9 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
     }
 
     /**
-     * Node节点
+     * @implSpec 此类不会在ConcurrentHashMap以外被修改.
+     * @implSpec 只读迭代可以利用这个类，迭代时的写操作需要由另一个内部类`MapEntry`代理执行写操作
+     * @implSpec 此类的子类具有负数hash值，并且不存储实际的数据
      */
     @Getter
     @AllArgsConstructor
@@ -2819,6 +2821,12 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             return key + "=" + value;
         }
 
+        /**
+         * @implSpec 不支持来自ConcurrentHashMap外部的修改，跟1.7的一样，迭代操作需要通过另外一个内部类MapEntry来代理，迭代写会重新执行一次put操作
+         * @implSpec 迭代中改变value，是一种写操作，此时需要保证这个节点还在map中，因此就重新put一次：节点不存在了，可以重新让它存在；节点还存在，相当于replace一次
+         * @implSpec 设计成这样主要是因为ConcurrentHashMap并非为了迭代操作而设计，它的迭代操作和其他写操作不好并发，迭代时的读写都是弱一致性的，碰见并发修改时尽量维护迭代的一致性
+         * @implSpec 返回值V也可能是个过时的值，保证V是最新的值会比较困难，而且得不偿失
+         */
         public final V setValue(V value) {
             throw new UnsupportedOperationException();
         }
@@ -2835,14 +2843,20 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
         /**
          * Virtualized support for map.get(); overridden in subclasses.
+         * 从此节点开始查找k对应的节点
+         * 这里的实现是专为链表实现的，一般作用于头结点，各种特殊的子类有自己独特的实现
+         * 不过主体代码中进行链表查找时，因为要特殊判断下第一个节点，所以很少直接用下面这个方法，而是直接写循环遍历链表，子类的查找则是用子类中重写的find方法
          */
+        //
+        //
+        //
+        //
         Node<K, V> find(int h, Object k) {
             Node<K, V> e = this;
             if (k != null) {
                 do {
                     K ek;
-                    if (e.hash == h &&
-                            ((ek = e.key) == k || (ek != null && k.equals(ek))))
+                    if (e.hash == h && ((ek = e.key) == k || (ek != null && k.equals(ek))))
                         return e;
                 } while ((e = e.next) != null);
             }
@@ -2865,8 +2879,13 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * A node inserted at head of bins during transfer operations.
-     * <p>
-     * TODO
+     *
+     * @implNote `转发节点`
+     * @implSpec ForwardingNode是一种临时节点，在扩容进行中才会出现，hash值固定为-1
+     * @implSpec 它不存储实际的数据数据。
+     * @implSpec 如果旧数组的一个hash桶中全部的节点都迁移到新数组中，旧数组就在这个hash桶中放置一个ForwardingNode。
+     * @implSpec 读操作或者迭代读时碰到ForwardingNode时，将操作转发到扩容后的新的table数组上去执行
+     * @implSpec 写操作碰见它时，则尝试帮助扩容。
      */
     static final class ForwardingNode<K, V> extends Node<K, V> {
         final Node<K, V>[] nextTable;
@@ -2876,8 +2895,11 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             this.nextTable = tab;
         }
 
+        /**
+         * ForwardingNode的查找操作，直接在新数组nextTable上去进行查找
+         */
         Node<K, V> find(int h, Object k) {
-            // loop to avoid arbitrarily deep recursion on forwarding nodes
+            // 使用循环，避免多次碰到ForwardingNode导致递归过深
             outer:
             for (Node<K, V>[] tab = nextTable; ; ) {
                 Node<K, V> e;
@@ -2892,12 +2914,15 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                             ((ek = e.key) == k || (ek != null && k.equals(ek))))
                         return e;
                     if (eh < 0) {
+                        // 继续碰见ForwardingNode的情况，这里相当于是递归调用一次本方法
                         if (e instanceof ForwardingNode) {
                             tab = ((ForwardingNode<K, V>) e).nextTable;
                             continue outer;
                         } else
+                            // 碰见特殊节点，调用其find方法进行查找
                             return e.find(h, k);
                     }
+                    // 普通节点直接循环遍历链表
                     if ((e = e.next) == null)
                         return null;
                 }
@@ -2933,11 +2958,15 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * 红黑树节点
+     *
+     * @implSpec ConcurrentHashMap对此节点的操作，都会由TreeBin来代理执行。
+     * 也可以把这里的TreeNode看出是有一半功能的HashMap.TreeNode，另一半功能在ConcurrentHashMap.TreeBin中。
      */
     static final class TreeNode<K, V> extends Node<K, V> {
         TreeNode<K, V> parent;  // red-black tree links
         TreeNode<K, V> left;
         TreeNode<K, V> right;
+        // 新添加的prev指针是为了删除方便，删除链表的非头节点的节点，都需要知道它的前一个节点才能进行删除，所以直接提供一个prev指针
         TreeNode<K, V> prev;    // needed to unlink next upon deletion
         boolean red;
 
@@ -2952,8 +2981,8 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
         /**
          * Returns the TreeNode (or null if not found) for the given key starting at given root.
-         * <p>
-         * 从k节点开始, 根据key寻找, 并返回
+         *
+         * @implNote 以当前节点 this 为根节点开始遍历查找，跟HashMap.TreeNode.find实现一样
          */
         final TreeNode<K, V> findTreeNode(int h, Object k, Class<?> kc) {
             if (k != null) {
@@ -2980,6 +3009,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
                     else if ((q = pr.findTreeNode(h, k, kc)) != null)
                         return q;
                     else
+                        // 前面递归查找了右边子树，这里循环时只用一直往左边找
                         p = pl;
                 } while (p != null);
             }
@@ -2993,6 +3023,12 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      * their root. They also maintain a parasitic read-write lock
      * forcing writers (who hold bin lock) to wait for readers (who do
      * not) to complete before tree restructuring operations.
+     *
+     * @implNote 代理操作TreeNode的节点
+     * @implNote 它是ConcurrentHashMap中用于代理操作TreeNode的特殊节点，持有存储实际数据的红黑树的根节点。
+     * @implSpec TreeBin的hash值固定为-2
+     * @implSpec 因为红黑树进行写入操作，整个树的结构可能会有很大的变化，这个对读线程有很大的影响，
+     * 所以TreeBin还要维护一个简单读写锁，这是相对HashMap，这个类新引入这种特殊节点的重要原因。
      */
     static final class TreeBin<K, V> extends Node<K, V> {
         // values for lockState
