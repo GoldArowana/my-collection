@@ -172,10 +172,6 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
      */
     private static final int RESIZE_STAMP_SHIFT = 32 - RESIZE_STAMP_BITS;
 
-
-    /**
-     * Unsafe
-     */
     static {
         try {
             // 通过反射获得unsafe实例.
@@ -349,8 +345,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
             if ((ts = c.getGenericInterfaces()) != null) {
                 for (int i = 0; i < ts.length; ++i) {
                     if (((t = ts[i]) instanceof ParameterizedType) &&
-                            ((p = (ParameterizedType) t).getRawType() ==
-                                    Comparable.class) &&
+                            ((p = (ParameterizedType) t).getRawType() == Comparable.class) &&
                             (as = p.getActualTypeArguments()) != null &&
                             as.length == 1 && as[0] == c) // type arg is c
                         return c;
@@ -1702,7 +1697,7 @@ public class MyConcurrentHashMap<K, V> extends AbstractMap<K, V>
 
     /**
      * Helps transfer if a resize is in progress.
-     * // 如果正在进行扩容，则尝试去帮助执行transfer任务，此方法都是在循环中被调用，因此本身不用处理接连两次扩容的情况，这种情况在外部调用中处理
+     * 如果正在进行扩容，则尝试去帮助执行transfer任务，此方法都是在循环中被调用，因此本身不用处理接连两次扩容的情况，这种情况在外部调用中处理
      */
     final Node<K, V>[] helpTransfer(Node<K, V>[] tab, Node<K, V> f) {
         Node<K, V>[] nextTab;

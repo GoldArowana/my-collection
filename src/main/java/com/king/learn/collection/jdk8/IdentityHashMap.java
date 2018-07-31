@@ -10,11 +10,10 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
- * IdentityHashMap允许key值重复，但是——key必须是两个不同的对象，
+ * IdentityHashMap允许key值重复，但是key必须是两个不同的对象，
  * 即对于k1和k2，当k1==k2时，IdentityHashMap认为两个key相等
  */
-public class IdentityHashMap<K, V> extends AbstractMap<K, V>
-        implements Map<K, V>, Serializable, Cloneable {
+public class IdentityHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Serializable, Cloneable {
 
     /**
      * 用来表示null的key键

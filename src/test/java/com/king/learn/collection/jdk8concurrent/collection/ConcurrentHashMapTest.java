@@ -8,8 +8,8 @@ import lombok.Setter;
 public class ConcurrentHashMapTest {
     public static void main(String[] args) {
         MyConcurrentHashMap myConcurrentHashMap = new MyConcurrentHashMap();
-        for (int i = 0; i < 100; i++) {
-            myConcurrentHashMap.put(new Stu(i, 22222), new Object());
+        for (int i = 0; i < 20; i++) {
+            myConcurrentHashMap.put(new Stu(i, 22222 + (16) * (i % 2)), new Object());
         }
     }
 }
