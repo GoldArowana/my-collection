@@ -7,36 +7,48 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * 初始时多大, 就是多大. 不会扩容.
+ */
 public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
     /**
-     * The queued items
+     * 数组, 用于存储实际的元素
      */
     final Object[] items;
+
     /**
-     * ReentrantLockTest2 lock guarding all access
+     * 锁
      */
     final ReentrantLock lock;
+
     /**
-     * Condition for waiting takes
+     * Condition for waiting `takes`
      */
     private final Condition notEmpty;
+
     /**
-     * Condition for waiting puts
+     * Condition for waiting `puts`
      */
     private final Condition notFull;
 
     /**
      * items index for next take, poll, peek or remove
+     * 下一个用于take, poll, peek 或者remove的索引下标
      */
     int takeIndex;
+
     /**
      * items index for next put, offer, or add
+     * 下一个put, offer或者add的索引下标
      */
     int putIndex;
+
     /**
      * Number of elements in the queue
+     * 队列里元素个数
      */
     int count;
+
     /**
      * Shared state for currently active iterators, or null if there
      * are known not to be any.  Allows queue operations to update
@@ -44,28 +56,16 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
      */
     transient Itrs itrs = null;
 
-    // Internal helper methods
-
     /**
-     * Creates an {@code ArrayBlockingQueue} with the given (fixed)
-     * capacity and default access policy.
-     *
-     * @param capacity the capacity of this queue
-     * @throws IllegalArgumentException if {@code capacity < 1}
+     * 给定容量的构造器, 而且是非公平锁.
      */
     public ArrayBlockingQueue(int capacity) {
         this(capacity, false);
     }
 
     /**
-     * Creates an {@code ArrayBlockingQueue} with the given (fixed)
-     * capacity and the specified access policy.
-     *
-     * @param capacity the capacity of this queue
-     * @param fair     if {@code true} then queue accesses for threads blocked
-     *                 on insertion or removal, are processed in FIFO order;
-     *                 if {@code false} the access order is unspecified.
-     * @throws IllegalArgumentException if {@code capacity < 1}
+     * 可以指定公平锁还是非公平锁.
+     * 公平锁的话就是FIFO.
      */
     public ArrayBlockingQueue(int capacity, boolean fair) {
         if (capacity <= 0)
@@ -77,23 +77,9 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     }
 
     /**
-     * Creates an {@code ArrayBlockingQueue} with the given (fixed)
-     * capacity, the specified access policy and initially containing the
-     * elements of the given collection,
-     * added in traversal order of the collection's iterator.
-     *
-     * @param capacity the capacity of this queue
-     * @param fair     if {@code true} then queue accesses for threads blocked
-     *                 on insertion or removal, are processed in FIFO order;
-     *                 if {@code false} the access order is unspecified.
-     * @param c        the collection of elements to initially contain
-     * @throws IllegalArgumentException if {@code capacity} is less than
-     *                                  {@code c.size()}, or less than 1.
-     * @throws NullPointerException     if the specified collection or any
-     *                                  of its elements are null
+     * 初始化时将c集合中所有的元素都添加进当前的阻塞队列中.
      */
-    public ArrayBlockingQueue(int capacity, boolean fair,
-                              Collection<? extends E> c) {
+    public ArrayBlockingQueue(int capacity, boolean fair, Collection<? extends E> c) {
         this(capacity, fair);
 
         final ReentrantLock lock = this.lock;
@@ -116,13 +102,10 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     }
 
     /**
-     * Throws NullPointerException if argument is null.
-     *
-     * @param v the element
+     * 判断参数v是否为空.  如果是空那么就抛异常.  如果不是空, 那么就不管.
      */
     private static void checkNotNull(Object v) {
-        if (v == null)
-            throw new NullPointerException();
+        if (v == null) throw new NullPointerException();
     }
 
     /**
@@ -134,6 +117,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
 
     /**
      * Returns item at index i.
+     * 获取数组中第i个元素.
      */
     @SuppressWarnings("unchecked")
     final E itemAt(int i) {
@@ -143,6 +127,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     /**
      * Inserts element at current put position, advances, and signals.
      * Call only when holding lock.
+     * TODO
      */
     private void enqueue(E x) {
         // assert lock.getHoldCount() == 1;
@@ -219,28 +204,15 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     }
 
     /**
-     * Inserts the specified element at the tail of this queue if it is
-     * possible to do so immediately without exceeding the queue's capacity,
-     * returning {@code true} upon success and throwing an
-     * {@code IllegalStateException} if this queue is full.
-     *
-     * @param e the element to add
-     * @return {@code true} (as specified by {@link Collection#add})
-     * @throws IllegalStateException if this queue is full
-     * @throws NullPointerException  if the specified element is null
+     * 调用的是offer方法. 满了的时候回失败.
+     * 成功了返回true. 失败了就抛异常.
      */
     public boolean add(E e) {
         return super.add(e);
     }
 
     /**
-     * Inserts the specified element at the tail of this queue if it is
-     * possible to do so immediately without exceeding the queue's capacity,
-     * returning {@code true} upon success and {@code false} if this queue
-     * is full.  This method is generally preferable to method {@link #add},
-     * which can fail to insert an element only by throwing an exception.
-     *
-     * @throws NullPointerException if the specified element is null
+     * 线程安全的入队操作. 成功插入就返回true. 队列插入时已满, 那么就失败, 返回false.
      */
     public boolean offer(E e) {
         checkNotNull(e);
@@ -261,9 +233,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     /**
      * Inserts the specified element at the tail of this queue, waiting
      * for space to become available if the queue is full.
-     *
-     * @throws InterruptedException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
+     * 插入. 如果满了, 那么就等待.
      */
     public void put(E e) throws InterruptedException {
         checkNotNull(e);
@@ -279,16 +249,10 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     }
 
     /**
-     * Inserts the specified element at the tail of this queue, waiting
-     * up to the specified wait time for space to become available if
-     * the queue is full.
-     *
-     * @throws InterruptedException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
+     * 带等待时间的offer.在队列满的时候, 等一会儿.
+     * 不然在队里满的时候, 就是直接失败.
      */
-    public boolean offer(E e, long timeout, TimeUnit unit)
-            throws InterruptedException {
-
+    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
         checkNotNull(e);
         long nanos = unit.toNanos(timeout);
         final ReentrantLock lock = this.lock;
@@ -306,6 +270,11 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
         }
     }
 
+    /**
+     * 线程安全的出队操作.
+     * 如果队列中有元素, 那么就出队并返回.
+     * 如果队列中没有元素了, 那么就返回null.
+     */
     public E poll() {
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -316,6 +285,9 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
         }
     }
 
+    /**
+     * 线程安全的出队. 如果队列中没有元素, 那么就一直等待.
+     */
     public E take() throws InterruptedException {
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
@@ -328,6 +300,9 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
         }
     }
 
+    /**
+     * 线程安全的出队. 如果队列中没有元素, 那么就等待timeout时间.
+     */
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         long nanos = unit.toNanos(timeout);
         final ReentrantLock lock = this.lock;
@@ -344,6 +319,10 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
         }
     }
 
+    /**
+     * 查看下一个要出队的元素.
+     * 仅仅是查看, 并不执行出队操作.
+     */
     public E peek() {
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -354,13 +333,8 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
         }
     }
 
-    // this doc comment is overridden to remove the reference to collections
-    // greater in size than Integer.MAX_VALUE
-
     /**
-     * Returns the number of elements in this queue.
-     *
-     * @return the number of elements in this queue
+     * @return 当前阻塞队列里有多少个元素.
      */
     public int size() {
         final ReentrantLock lock = this.lock;
@@ -372,19 +346,8 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
         }
     }
 
-    // this doc comment is a modified copy of the inherited doc comment,
-    // without the reference to unlimited queues.
-
     /**
-     * Returns the number of additional elements that this queue can ideally
-     * (in the absence of memory or resource constraints) accept without
-     * blocking. This is always equal to the initial capacity of this queue
-     * less the current {@code size} of this queue.
-     *
-     * <p>Note that you <em>cannot</em> always tell if an attempt to insert
-     * an element will succeed by inspecting {@code remainingCapacity}
-     * because it may be the case that another thread is about to
-     * insert or remove an element.
+     * 数组中剩余的使用空间.
      */
     public int remainingCapacity() {
         final ReentrantLock lock = this.lock;
@@ -397,21 +360,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     }
 
     /**
-     * Removes a single instance of the specified element from this queue,
-     * if it is present.  More formally, removes an element {@code e} such
-     * that {@code o.equals(e)}, if this queue contains one or more such
-     * elements.
-     * Returns {@code true} if this queue contained the specified element
-     * (or equivalently, if this queue changed as a result of the call).
      *
-     * <p>Removal of interior elements in circular array based queues
-     * is an intrinsically slow and disruptive operation, so should
-     * be undertaken only in exceptional circumstances, ideally
-     * only when the queue is known not to be accessible by other
-     * threads.
-     *
-     * @param o element to be removed from this queue, if present
-     * @return {@code true} if this queue changed as a result of the call
      */
     public boolean remove(Object o) {
         if (o == null) return false;
@@ -438,12 +387,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     }
 
     /**
-     * Returns {@code true} if this queue contains the specified element.
-     * More formally, returns {@code true} if and only if this queue contains
-     * at least one element {@code e} such that {@code o.equals(e)}.
-     *
-     * @param o object to be checked for containment in this queue
-     * @return {@code true} if this queue contains the specified element
+     * 遍历查找o是否存在
      */
     public boolean contains(Object o) {
         if (o == null) return false;
@@ -561,6 +505,9 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
         return a;
     }
 
+    /**
+     * 线程安全的toString
+     */
     public String toString() {
         final ReentrantLock lock = this.lock;
         lock.lock();
@@ -589,6 +536,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     /**
      * Atomically removes all of the elements from this queue.
      * The queue will be empty after this call returns.
+     * 清空队列
      */
     public void clear() {
         final Object[] items = this.items;
@@ -677,46 +625,22 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
     }
 
     /**
-     * Returns an iterator over the elements in this queue in proper sequence.
-     * The elements will be returned in order from first (head) to last (tail).
-     *
-     * <p>The returned iterator is
-     * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
-     *
-     * @return an iterator over the elements in this queue in proper sequence
+     * @return 返回一个新的迭代器
      */
     public Iterator<E> iterator() {
         return new Itr();
     }
 
     /**
-     * Returns a {@link Spliterator} over the elements in this queue.
-     *
-     * <p>The returned spliterator is
-     * <a href="package-summary.html#Weakly"><i>weakly consistent</i></a>.
-     *
-     * <p>The {@code Spliterator} reports {@link Spliterator#CONCURRENT},
-     * {@link Spliterator#ORDERED}, and {@link Spliterator#NONNULL}.
-     *
-     * @return a {@code Spliterator} over the elements in this queue
-     * @implNote The {@code Spliterator} implements {@code trySplit} to permit limited
-     * parallelism.
-     * @since 1.8
+     * @return 返回一个spliterator
      */
     public Spliterator<E> spliterator() {
         return Spliterators.spliterator
-                (this, Spliterator.ORDERED | Spliterator.NONNULL |
-                        Spliterator.CONCURRENT);
+                (this, Spliterator.ORDERED | Spliterator.NONNULL | Spliterator.CONCURRENT);
     }
 
     /**
-     * Deserializes this queue and then checks some invariants.
-     *
-     * @param s the input stream
-     * @throws ClassNotFoundException         if the class of a serialized object
-     *                                        could not be found
-     * @throws java.io.InvalidObjectException if invariants are violated
-     * @throws java.io.IOException            if an I/O error occurs
+     * 反序列化
      */
     private void readObject(java.io.ObjectInputStream s)
             throws java.io.IOException, ClassNotFoundException {
