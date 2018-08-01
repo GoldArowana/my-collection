@@ -5,14 +5,13 @@ import java.util.List;
 import java.util.Random;
 
 /**
- * Created by author on 2017/10/9.
  * 实现跳跃表：能够对递增链表实现logN的查询时间
  * https://www.cnblogs.com/ljdblog/p/7645814.html
  */
 public class SkipList<T> {
     private static final int MAX_LEVEL = 1 << 6;
     //跳跃表数据结构
-    private SkipNode<T> top;
+    private Node<T> top;
     private int level = 0;
     //用于产生随机数的Random对象
     private Random random = new Random();
@@ -26,10 +25,10 @@ public class SkipList<T> {
     public SkipList(int level) {
         this.level = level;
         int i = level;
-        SkipNode<T> temp = null;
-        SkipNode<T> prev = null;
+        Node<T> temp = null;
+        Node<T> prev = null;
         while (i-- != 0) {
-            temp = new SkipNode<T>(null, Double.MIN_VALUE);
+            temp = new Node<T>(null, Double.MIN_VALUE);
             temp.down = prev;
             prev = temp;
         }
@@ -54,7 +53,7 @@ public class SkipList<T> {
      * @return
      */
     public T get(double score) {
-        SkipNode<T> t = top;
+        Node<T> t = top;
         while (t != null) {
             if (t.score == score)
                 return t.val;
@@ -75,8 +74,8 @@ public class SkipList<T> {
 
     public void put(double score, T val) {
         //1，找到需要插入的位置
-        SkipNode<T> t = top, cur = null;//若cur不为空，表示当前score值的节点存在
-        List<SkipNode<T>> path = new ArrayList<>();//记录每一层当前节点的前驱节点
+        Node<T> t = top, cur = null;//若cur不为空，表示当前score值的节点存在
+        List<Node<T>> path = new ArrayList<>();//记录每一层当前节点的前驱节点
         while (t != null) {
             if (t.score == score) {
                 cur = t;
@@ -108,10 +107,10 @@ public class SkipList<T> {
         } else {//当前表中不存在score值的节点，需要从下到上插入
             int lev = getRandomLevel();
             if (lev > level) {//需要更新top这一列的节点数量，同时需要在path中增加这些新的首节点
-                SkipNode<T> temp = null;
-                SkipNode<T> prev = top;//前驱节点现在是top了
+                Node<T> temp = null;
+                Node<T> prev = top;//前驱节点现在是top了
                 while (level++ != lev) {
-                    temp = new SkipNode<T>(null, Double.MIN_VALUE);
+                    temp = new Node<T>(null, Double.MIN_VALUE);
                     path.add(0, temp);//加到path的首部
                     temp.down = prev;
                     prev = temp;
@@ -120,10 +119,10 @@ public class SkipList<T> {
                 level = lev;//level长度增加到新的长度
             }
             //从后向前遍历path中的每一个节点，在其后面增加一个新的节点
-            SkipNode<T> downTemp = null, temp = null, prev = null;
+            Node<T> downTemp = null, temp = null, prev = null;
 //            System.out.println("当前深度为"+level+",当前path长度为"+path.size());
             for (int i = level - 1; i >= level - lev; i--) {
-                temp = new SkipNode<T>(val, score);
+                temp = new Node<T>(val, score);
                 prev = path.get(i);
                 temp.next = prev.next;
                 prev.next = temp;
@@ -140,7 +139,7 @@ public class SkipList<T> {
      */
     public void delete(double score) {
         //1,查找到节点列的第一个节点的前驱
-        SkipNode<T> t = top;
+        Node<T> t = top;
         while (t != null) {
             if (t.next == null) {
                 t = t.down;
@@ -163,7 +162,7 @@ public class SkipList<T> {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        SkipNode<T> t = top, next = null;
+        Node<T> t = top, next = null;
         while (t != null) {
             next = t;
             while (next != null) {
@@ -179,12 +178,12 @@ public class SkipList<T> {
     /**
      * 跳跃表的节点的构成
      */
-    private static class SkipNode<E> {
+    private static class Node<E> {
         E val;//存储的数据
         double score;//跳跃表按照这个分数值进行从小到大排序。
-        SkipNode<E> next, down;//next指针，指向下一层的指针
+        Node<E> next, down;//next指针，指向下一层的指针
 
-        SkipNode(E val, double score) {
+        Node(E val, double score) {
             this.val = val;
             this.score = score;
         }

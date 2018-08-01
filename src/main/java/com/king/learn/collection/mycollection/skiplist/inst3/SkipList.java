@@ -17,7 +17,7 @@ public class SkipList<E extends Comparable<E>> extends AbstractSortedSet<E> {
         size = 0;
         maxLevel = 0;
         head = new Node<E>(null);
-        head.nextNodes.add(null);
+        head.getNextNodes().add(null);
     }
 
     public Node getHead() {

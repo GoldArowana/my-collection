@@ -10,6 +10,7 @@ public class Main {
         System.out.println(testList);
         testList.add(2);
         System.out.println(testList);
+        testList.contains(4);
         testList = new SkipList<String>();
         System.out.println(testList);
         testList.add("hello");
