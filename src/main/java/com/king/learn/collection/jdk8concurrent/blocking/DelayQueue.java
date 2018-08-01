@@ -114,7 +114,6 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E> implements B
     /**
      * Retrieves and removes the head of this queue, waiting if necessary
      * until an element with an expired delay is available on this queue.
-     *
      */
     public E take() throws InterruptedException {
         final ReentrantLock lock = this.lock;

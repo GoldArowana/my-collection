@@ -1,38 +1,3 @@
-/*
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
-/*
- *
- *
- *
- *
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
-
 package com.king.learn.collection.jdk8concurrent.blocking;
 
 import java.util.*;
@@ -96,7 +61,7 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
     }
 
     /**
-     * 传说中的有界队列, 容量是capacity
+     * 有界队列, 容量是capacity
      */
     public LinkedBlockingQueue(int capacity) {
         if (capacity <= 0) throw new IllegalArgumentException();
@@ -230,20 +195,12 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
 
         // 如果你纠结这里为什么是 -1，可以看看 offer 方法。这就是个标识成功、失败的标志而已。
         int c = -1;
-        Node<E> node = new Node<E>(e);
+        Node<E> node = new Node<>(e);
         final ReentrantLock putLock = this.putLock;
         final AtomicInteger count = this.count;
         // 必须要获取到 putLock 才可以进行插入操作
         putLock.lockInterruptibly();
         try {
-            /*
-             * Note that count is used in wait guard even though it is
-             * not protected by lock. This works because count can
-             * only decrease at this point (all other puts are shut
-             * out by lock), and we (or some other waiting put) are
-             * signalled if it ever changes from capacity. Similarly
-             * for all other uses of count in other wait guards.
-             */
             // 如果队列满，等待 notFull 的条件满足。
             while (count.get() == capacity) {
                 notFull.await();
@@ -253,7 +210,6 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
             // count 原子加 1，c 还是加 1 前的值
             c = count.getAndIncrement();
             // 如果这个元素入队后，还有至少一个槽可以使用，调用 notFull.signal() 唤醒等待线程。
-            // 哪些线程会等待在 notFull 这个 Condition 上呢？
             if (c + 1 < capacity)
                 notFull.signal();
         } finally {
@@ -267,16 +223,12 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
     }
 
     /**
-     * Inserts the specified element at the tail of this queue, waiting if
-     * necessary up to the specified wait time for space to become available.
-     *
-     * @return {@code true} if successful, or {@code false} if
-     * the specified waiting time elapses before space is available
-     * @throws InterruptedException {@inheritDoc}
-     * @throws NullPointerException {@inheritDoc}
+     * 线程安全尾插.
+     * 如果满了, 那么就等待timeout.
+     * 如果到了timeout也仍然满着, 那么就false
+     * 如果最终插入进去了, 那么就true
      */
-    public boolean offer(E e, long timeout, TimeUnit unit)
-            throws InterruptedException {
+    public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
 
         if (e == null) throw new NullPointerException();
         long nanos = unit.toNanos(timeout);
@@ -303,15 +255,8 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E> implements Blocking
     }
 
     /**
-     * Inserts the specified element at the tail of this queue if it is
-     * possible to do so immediately without exceeding the queue's capacity,
-     * returning {@code true} upon success and {@code false} if this queue
-     * is full.
-     * When using a capacity-restricted queue, this method is generally
-     * preferable to method {@link BlockingQueue#add add}, which can fail to
-     * insert an element only by throwing an exception.
-     *
-     * @throws NullPointerException if the specified element is null
+     * 满了就失败, 返回false.
+     * 插入成功了, 返回true
      */
     public boolean offer(E e) {
         if (e == null) throw new NullPointerException();
