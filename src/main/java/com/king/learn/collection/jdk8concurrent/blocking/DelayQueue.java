@@ -1,38 +1,3 @@
-/*
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- *
- */
-
-/*
- *
- *
- *
- *
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
-
 package com.king.learn.collection.jdk8concurrent.blocking;
 
 import java.util.*;
@@ -44,45 +9,18 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-/**
- * An unbounded {@linkplain BlockingQueue blocking queue} of
- * {@code Delayed} elements, in which an element can only be taken
- * when its delay has expired.  The <em>head</em> of the queue is that
- * {@code Delayed} element whose delay expired furthest in the
- * past.  If no delay has expired there is no head and {@code poll}
- * will return {@code null}. Expiration occurs when an element's
- * {@code getDelay(TimeUnit.NANOSECONDS)} method returns a value less
- * than or equal to zero.  Even though unexpired elements cannot be
- * removed using {@code take} or {@code poll}, they are otherwise
- * treated as normal elements. For example, the {@code size} method
- * returns the count of both expired and unexpired elements.
- * This queue does not permit null elements.
- *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.  The Iterator provided in method {@link
- * #iterator()} is <em>not</em> guaranteed to traverse the elements of
- * the DelayQueue in any particular order.
- *
- * <p>This class is a member of the
- * <a href="{@docRoot}/../technotes/guides/collections/index.html">
- * Java Collections Framework</a>.
- *
- * @param <E> the type of elements held in this collection
- * @author Doug Lea
- * @since 1.5
- */
-public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
-        implements BlockingQueue<E> {
+public class DelayQueue<E extends Delayed> extends AbstractQueue<E> implements BlockingQueue<E> {
 
     private final transient ReentrantLock lock = new ReentrantLock();
     private final PriorityQueue<E> q = new PriorityQueue<E>();
+
     /**
      * Condition signalled when a newer element becomes available
      * at the head of the queue or a new thread may need to
      * become leader.
      */
     private final Condition available = lock.newCondition();
+
     /**
      * Thread designated to wait for the element at the head of
      * the queue.  This variant of the Leader-Follower pattern
@@ -102,29 +40,20 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     private Thread leader = null;
 
     /**
-     * Creates a new {@code DelayQueue} that is initially empty.
+     * 空构造器
      */
     public DelayQueue() {
     }
 
     /**
-     * Creates a {@code DelayQueue} initially containing the elements of the
-     * given collection of {@link Delayed} instances.
-     *
-     * @param c the collection of elements to initially contain
-     * @throws NullPointerException if the specified collection or any
-     *                              of its elements are null
+     * 初始时把c集合里的元素都添加进来
      */
     public DelayQueue(Collection<? extends E> c) {
         this.addAll(c);
     }
 
     /**
-     * Inserts the specified element into this delay queue.
-     *
-     * @param e the element to add
-     * @return {@code true} (as specified by {@link Collection#add})
-     * @throws NullPointerException if the specified element is null
+     * 就是offer(e)
      */
     public boolean add(E e) {
         return offer(e);
@@ -132,10 +61,7 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
 
     /**
      * Inserts the specified element into this delay queue.
-     *
-     * @param e the element to add
-     * @return {@code true}
-     * @throws NullPointerException if the specified element is null
+     * 入队.
      */
     public boolean offer(E e) {
         final ReentrantLock lock = this.lock;
@@ -153,36 +79,23 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
     }
 
     /**
-     * Inserts the specified element into this delay queue. As the queue is
-     * unbounded this method will never block.
-     *
-     * @param e the element to add
-     * @throws NullPointerException {@inheritDoc}
+     * 就是offer(e)
      */
     public void put(E e) {
         offer(e);
     }
 
     /**
-     * Inserts the specified element into this delay queue. As the queue is
-     * unbounded this method will never block.
-     *
-     * @param e       the element to add
-     * @param timeout This parameter is ignored as the method never blocks
-     * @param unit    This parameter is ignored as the method never blocks
-     * @return {@code true}
-     * @throws NullPointerException {@inheritDoc}
+     * 就是offer(e)
      */
     public boolean offer(E e, long timeout, TimeUnit unit) {
         return offer(e);
     }
 
     /**
-     * Retrieves and removes the head of this queue, or returns {@code null}
-     * if this queue has no elements with an expired delay.
-     *
-     * @return the head of this queue, or {@code null} if this
-     * queue has no elements with an expired delay
+     * 尝试从队列中取.
+     * 如果队头的元素还没到期, 那么取不出来, 返回null.
+     * 如果队友的元素到期了, 那么能取出来, 队头出队并返回.
      */
     public E poll() {
         final ReentrantLock lock = this.lock;
@@ -202,8 +115,6 @@ public class DelayQueue<E extends Delayed> extends AbstractQueue<E>
      * Retrieves and removes the head of this queue, waiting if necessary
      * until an element with an expired delay is available on this queue.
      *
-     * @return the head of this queue
-     * @throws InterruptedException {@inheritDoc}
      */
     public E take() throws InterruptedException {
         final ReentrantLock lock = this.lock;
