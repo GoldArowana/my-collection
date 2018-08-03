@@ -42,7 +42,7 @@ public class SkipList<T> {
     private int getRandomLevel() {
         int lev = 1;
         while (random.nextInt() % 2 == 0)
-            lev++;
+            lev += 1;
         return lev > MAX_LEVEL ? MAX_LEVEL : lev;
     }
 
