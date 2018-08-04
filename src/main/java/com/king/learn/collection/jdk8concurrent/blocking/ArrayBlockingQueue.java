@@ -119,8 +119,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E> implements BlockingQ
      * Returns item at index i.
      * 获取数组中第i个元素.
      */
-    @SuppressWarnings("unchecked")
-    final E itemAt(int i) {
+    @SuppressWarnings("unchecked") final E itemAt(int i) {
         return (E) items[i];
     }
 

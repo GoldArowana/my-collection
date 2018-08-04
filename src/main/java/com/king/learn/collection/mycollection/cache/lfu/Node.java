@@ -15,7 +15,7 @@ class FrequencyNode extends Node {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    NodeList lfuCacheEntryList = new NodeList();
+    DoublyLinkedList lfuCacheEntryList = new DoublyLinkedList();
 }
 
 

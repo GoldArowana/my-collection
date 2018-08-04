@@ -1,6 +1,6 @@
 package com.king.learn.collection.mycollection.cache.lfu;
 
-public class Main {
+public class CacheTest {
     public static void main(String args[]) {
         LFUCache<Integer, Integer> cache = new LFUCache<>(10);
 
@@ -117,7 +117,3 @@ public class Main {
 
     }
 }
- 
-
-
-

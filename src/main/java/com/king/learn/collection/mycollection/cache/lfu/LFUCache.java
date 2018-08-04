@@ -9,7 +9,7 @@ import java.util.HashMap;
 public class LFUCache<K, V> {
     HashMap<K, LFUCacheEntry<K, V>> kvStore = new HashMap<>(); // k-v 存储.
 
-    NodeList freqList = new NodeList(); // 双向链表
+    DoublyLinkedList freqList = new DoublyLinkedList(); // 双向链表
 
     HashMap<Integer, FrequencyNode> frequencyMap = new HashMap<>();
 
