@@ -11,7 +11,7 @@ import java.util.List;
  * https://www.cnblogs.com/ljdblog/p/7645814.html
  */
 public class SkipList<T> {
-    private static final RandomNumber random = new RandomNumber(333, 100);
+    private static final RandomNumber random = new RandomNumber(333, 100); // 随机数生成器
     private static final int MAX_LEVEL = 1 << 6;
     private Node<T> top;
     private int level;
@@ -76,12 +76,10 @@ public class SkipList<T> {
 
     public void delete(double score) {
         for (Node<T> t = top; t != null; ) {
-            if (t.next == null)
-                t = t.down;
-            else if (t.next.score == score && t.deleteNext())     // 删除当前节点后，还需要继续查找之后需要删除的节点
+            if (t.next == null || (t.next.score == score && t.deleteNext()) || t.next.score > score)
                 t = t.down;
             else
-                t = (t.next.score > score ? t.down : t.next);
+                t = t.next;
         }
     }
 
