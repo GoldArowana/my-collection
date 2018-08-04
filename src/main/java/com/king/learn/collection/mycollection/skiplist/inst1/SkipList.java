@@ -21,8 +21,8 @@ public class SkipList<T> {
     }
 
     public SkipList(int level) {
-        int i = this.level = level;
-        for (Node<T> prev = null; i > 0; i--)
+        Node<T> prev = null;
+        for (int i = this.level = level; i > 0; i--)
             top = prev = new Node<>(null, Double.MIN_VALUE, null, prev);
     }
 
@@ -82,7 +82,6 @@ public class SkipList<T> {
                 t = t.next;
         }
     }
-
 
     @Override
     public String toString() {

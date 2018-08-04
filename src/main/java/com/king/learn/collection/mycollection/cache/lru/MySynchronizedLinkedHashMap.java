@@ -1,4 +1,4 @@
-package com.king.learn.collection.mycollection.cache;
+package com.king.learn.collection.mycollection.cache.lru;
 
 import lombok.Getter;
 import lombok.Setter;

@@ -1,4 +1,4 @@
-package com.king.learn.collection.mycollection.cache;
+package com.king.learn.collection.mycollection.cache.lru;
 
 public class TestSync {
     public static void main(String[] args) {
