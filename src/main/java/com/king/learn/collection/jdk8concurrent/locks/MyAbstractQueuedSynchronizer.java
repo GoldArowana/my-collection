@@ -1475,7 +1475,6 @@ public abstract class MyAbstractQueuedSynchronizer {
             // 完全释放锁，返回值是释放锁之前的 state 值
             int savedState = fullyRelease(node);
             int interruptMode = 0;
-            // 这里退出循环有两种情况，之后再仔细分析
             // 1. isOnSyncQueue(node) 返回 true，即当前 node 已经转移到阻塞队列了
             // 2. checkInterruptWhileWaiting(node) != 0 会到 break，然后退出循环，代表的是线程中断
             while (!isOnSyncQueue(node)) {
