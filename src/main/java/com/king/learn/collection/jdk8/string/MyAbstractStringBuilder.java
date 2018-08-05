@@ -11,10 +11,12 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
      * 可开辟的最大空间.(虚拟机限制)
      */
     private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
+
     /**
      * 用于存储字符串
      */
     char[] value;
+
     /**
      * 数组value中有多少是使用中的
      */
@@ -47,8 +49,7 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
      * 如果不够就去扩容.
      */
     public void ensureCapacity(int minimumCapacity) {
-        if (minimumCapacity > 0)
-            ensureCapacityInternal(minimumCapacity);
+        if (minimumCapacity > 0) ensureCapacityInternal(minimumCapacity);
     }
 
     /**
@@ -57,10 +58,8 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
      */
     private void ensureCapacityInternal(int minimumCapacity) {
         // overflow-conscious code
-        if (minimumCapacity - value.length > 0) {
-            value = Arrays.copyOf(value,
-                    newCapacity(minimumCapacity));
-        }
+        if (minimumCapacity - value.length > 0)
+            value = Arrays.copyOf(value, newCapacity(minimumCapacity));
     }
 
     /**
@@ -70,29 +69,21 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
     private int newCapacity(int minCapacity) {
         // overflow-conscious code
         int newCapacity = (value.length << 1) + 2;
-        if (newCapacity - minCapacity < 0) {
-            newCapacity = minCapacity;
-        }
-        return (newCapacity <= 0 || MAX_ARRAY_SIZE - newCapacity < 0)
-                ? hugeCapacity(minCapacity)
-                : newCapacity;
+        if (newCapacity - minCapacity < 0) newCapacity = minCapacity;
+        return (newCapacity <= 0 || MAX_ARRAY_SIZE - newCapacity < 0) ?
+                hugeCapacity(minCapacity) : newCapacity;
     }
 
     private int hugeCapacity(int minCapacity) {
-        if (Integer.MAX_VALUE - minCapacity < 0) { // overflow
-            throw new OutOfMemoryError();
-        }
-        return (minCapacity > MAX_ARRAY_SIZE)
-                ? minCapacity : MAX_ARRAY_SIZE;
+        if (Integer.MAX_VALUE - minCapacity < 0) throw new OutOfMemoryError(); // overflow
+        return (minCapacity > MAX_ARRAY_SIZE) ? minCapacity : MAX_ARRAY_SIZE;
     }
 
     /**
      * 去掉数组中多余的(未使用)的空间.
      */
     public void trimToSize() {
-        if (count < value.length) {
-            value = Arrays.copyOf(value, count);
-        }
+        if (count < value.length) value = Arrays.copyOf(value, count);
     }
 
 
@@ -107,9 +98,7 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
         ensureCapacityInternal(newLength);
 
         // 如果数组的使用部分的大小小于newLength, 那么用ascii 0 填充
-        if (count < newLength) {
-            Arrays.fill(value, count, newLength, '\0');
-        }
+        if (count < newLength) Arrays.fill(value, count, newLength, '\0');
 
         // 如果数组的使用部分大于newLength, 那么直接把这个大小赋值就好了
         // (有点像把指针往回拉的这样一个动作)
@@ -119,8 +108,7 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
     @Override
     public char charAt(int index) {
         // 检查越界
-        if ((index < 0) || (index >= count))
-            throw new StringIndexOutOfBoundsException(index);
+        if ((index < 0) || (index >= count)) throw new StringIndexOutOfBoundsException(index);
         // 返回数组中对应的位置数据.
         return value[index];
     }
@@ -128,10 +116,8 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         if (srcBegin < 0)
             throw new StringIndexOutOfBoundsException(srcBegin);
-        if ((srcEnd < 0) || (srcEnd > count))
-            throw new StringIndexOutOfBoundsException(srcEnd);
-        if (srcBegin > srcEnd)
-            throw new StringIndexOutOfBoundsException("srcBegin > srcEnd");
+        if ((srcEnd < 0) || (srcEnd > count)) throw new StringIndexOutOfBoundsException(srcEnd);
+        if (srcBegin > srcEnd) throw new StringIndexOutOfBoundsException("srcBegin > srcEnd");
         System.arraycopy(value, srcBegin, dst, dstBegin, srcEnd - srcBegin);
     }
 

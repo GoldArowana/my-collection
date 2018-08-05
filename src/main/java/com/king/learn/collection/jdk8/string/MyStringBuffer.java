@@ -30,42 +30,9 @@ public final class MyStringBuffer extends MyAbstractStringBuilder {
     }
 
     @Override
-    public synchronized int length() {
-        return count;
-    }
-
-    @Override
-    public synchronized int capacity() {
-        return value.length;
-    }
-
-
-    @Override
-    public synchronized void ensureCapacity(int minimumCapacity) {
-        super.ensureCapacity(minimumCapacity);
-    }
-
-    @Override
-    public synchronized void trimToSize() {
-        super.trimToSize();
-    }
-
-    @Override
     public synchronized void setLength(int newLength) {
         toStringCache = null;
         super.setLength(newLength);
-    }
-
-    @Override
-    public synchronized char charAt(int index) {
-        if ((index < 0) || (index >= count))
-            throw new StringIndexOutOfBoundsException(index);
-        return value[index];
-    }
-
-    @Override
-    public synchronized void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
-        super.getChars(srcBegin, srcEnd, dst, dstBegin);
     }
 
     @Override
@@ -173,21 +140,6 @@ public final class MyStringBuffer extends MyAbstractStringBuilder {
     }
 
     @Override
-    public synchronized String substring(int start) {
-        return substring(start, count);
-    }
-
-    @Override
-    public synchronized CharSequence subSequence(int start, int end) {
-        return super.substring(start, end);
-    }
-
-    @Override
-    public synchronized String substring(int start, int end) {
-        return super.substring(start, end);
-    }
-
-    @Override
     public synchronized MyStringBuffer insert(int index, char[] str, int offset, int len) {
         toStringCache = null;
         super.insert(index, str, offset, len);
@@ -284,25 +236,9 @@ public final class MyStringBuffer extends MyAbstractStringBuilder {
     }
 
     @Override
-    public int indexOf(String str) {
-        // Note, synchronization achieved via invocations of other StringBuffer methods
-        return super.indexOf(str);
-    }
-
-    @Override
-    public synchronized int indexOf(String str, int fromIndex) {
-        return super.indexOf(str, fromIndex);
-    }
-
-    @Override
     public int lastIndexOf(String str) {
         // Note, synchronization achieved via invocations of other StringBuffer methods
         return lastIndexOf(str, count);
-    }
-
-    @Override
-    public synchronized int lastIndexOf(String str, int fromIndex) {
-        return super.lastIndexOf(str, fromIndex);
     }
 
     @Override
@@ -314,9 +250,7 @@ public final class MyStringBuffer extends MyAbstractStringBuilder {
 
     @Override
     public synchronized String toString() {
-        if (toStringCache == null) {
-            toStringCache = Arrays.copyOfRange(value, 0, count);
-        }
+        if (toStringCache == null) toStringCache = Arrays.copyOfRange(value, 0, count);
         return new String(toStringCache);
     }
 }

@@ -164,26 +164,6 @@ public final class MyStringBuilder extends MyAbstractStringBuilder {
     }
 
     @Override
-    public int indexOf(String str) {
-        return super.indexOf(str);
-    }
-
-    @Override
-    public int indexOf(String str, int fromIndex) {
-        return super.indexOf(str, fromIndex);
-    }
-
-    @Override
-    public int lastIndexOf(String str) {
-        return super.lastIndexOf(str);
-    }
-
-    @Override
-    public int lastIndexOf(String str, int fromIndex) {
-        return super.lastIndexOf(str, fromIndex);
-    }
-
-    @Override
     public MyStringBuilder reverse() {
         super.reverse();
         return this;
@@ -191,8 +171,7 @@ public final class MyStringBuilder extends MyAbstractStringBuilder {
 
     @Override
     public String toString() {
-        // Create a copy, don't share the array
-        return new String(value, 0, count);
+        return new String(value, 0, count);// Create a copy, don't share the array
     }
 
 }
