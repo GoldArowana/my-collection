@@ -28,7 +28,7 @@ public class RandomNumber {
 
         // 输出10个0 或者 1. 相当于抛硬币.
         for (int i = 0; i < 100; i++) {
-            System.out.print(rr.trueOrFalse());
+            System.out.print(rr.isTrue());
         }
     }
 
@@ -46,7 +46,7 @@ public class RandomNumber {
      * ----- next() 取到 0 ~ 49 的时候, 本方法会返回 false.
      * ----- next()取到 50 ~ 99 的时候, 本方法会返回 true
      */
-    public boolean trueOrFalse() {
+    public boolean isTrue() {
         return next() >= (length / 2);
     }
 

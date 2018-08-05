@@ -31,9 +31,7 @@ public class LFUCache<K, V> {
 
 
     public FrequencyNode getFrequencyNode(int frequency) {
-        if (!frequencyMap.containsKey(frequency - 1) &&
-                !frequencyMap.containsKey(frequency) &&
-                frequency != 1) {
+        if (!frequencyMap.containsKey(frequency - 1) && !frequencyMap.containsKey(frequency) && frequency != 1) {
             System.out.println("Request for Frequency Node " + frequency +
                     " But " + frequency + " or " + (frequency - 1) +
                     " Doesn't exist");
@@ -42,11 +40,8 @@ public class LFUCache<K, V> {
 
         if (!frequencyMap.containsKey(frequency)) {
             FrequencyNode newFrequencyNode = new FrequencyNode(frequency);
-            if (frequency != 1)
-                freqList.insertAfter(frequencyMap.get(frequency - 1),
-                        newFrequencyNode);
-            else
-                freqList.prepend(newFrequencyNode);
+            if (frequency != 1) freqList.insertAfter(frequencyMap.get(frequency - 1), newFrequencyNode);
+            else freqList.prepend(newFrequencyNode);
             frequencyMap.put(frequency, newFrequencyNode);
         }
 
@@ -68,7 +63,7 @@ public class LFUCache<K, V> {
         }
 
         if (newFrequencyNode == null) newFrequencyNode = getFrequencyNode(1);
-        LFUCacheEntry<K, V> entry = new LFUCacheEntry<K, V>(key, value, newFrequencyNode);
+        LFUCacheEntry<K, V> entry = new LFUCacheEntry<>(key, value, newFrequencyNode);
         kvStore.put(key, entry);
         newFrequencyNode.lfuCacheEntryList.append(entry);
         size++;

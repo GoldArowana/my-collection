@@ -1,4 +1,4 @@
-package com.king.learn.collection.mycollection.skiplist.inst2;
+package com.king.learn.collection.mycollection.skiplist.demo2;
 
 import java.util.*;
 

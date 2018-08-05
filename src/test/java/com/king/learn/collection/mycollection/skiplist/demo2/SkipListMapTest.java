@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package com.king.learn.collection.mycollection.skiplist.inst2;
+package com.king.learn.collection.mycollection.skiplist.demo2;
 
 import org.junit.Assert;
 import org.junit.Before;

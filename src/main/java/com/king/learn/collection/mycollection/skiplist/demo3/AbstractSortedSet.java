@@ -1,4 +1,4 @@
-package com.king.learn.collection.mycollection.skiplist.inst3;
+package com.king.learn.collection.mycollection.skiplist.demo3;
 
 import java.util.AbstractSet;
 import java.util.Comparator;
