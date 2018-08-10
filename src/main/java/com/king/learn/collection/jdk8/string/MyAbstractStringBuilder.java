@@ -186,7 +186,7 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
             s = "null";
         if ((start < 0) || (start > end) || (end > s.length()))
             throw new IndexOutOfBoundsException("start " + start + ", end " + end + ", s.length() "
-                            + s.length());
+                    + s.length());
         int len = end - start;
         ensureCapacityInternal(count + len);
         for (int i = start, j = count; i < end; i++, j++)
@@ -360,7 +360,7 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
             throw new StringIndexOutOfBoundsException(index);
         if ((offset < 0) || (len < 0) || (offset > str.length - len))
             throw new StringIndexOutOfBoundsException("offset " + offset + ", len " + len + ", str.length "
-                            + str.length);
+                    + str.length);
         ensureCapacityInternal(count + len);
         System.arraycopy(value, index, value, index + len, count - index);
         System.arraycopy(str, offset, value, index, len);
@@ -421,7 +421,7 @@ public abstract class MyAbstractStringBuilder implements Appendable, CharSequenc
             throw new IndexOutOfBoundsException("dstOffset " + dstOffset);
         if ((start < 0) || (end < 0) || (start > end) || (end > s.length()))
             throw new IndexOutOfBoundsException("start " + start + ", end " + end + ", s.length() "
-                            + s.length());
+                    + s.length());
         int len = end - start;
         ensureCapacityInternal(count + len);
         System.arraycopy(value, dstOffset, value, dstOffset + len, count - dstOffset);

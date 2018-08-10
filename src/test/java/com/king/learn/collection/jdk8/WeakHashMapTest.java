@@ -85,6 +85,7 @@ public class WeakHashMapTest {
         System.gc();
         Thread.sleep(100);
         System.out.println(wmap.size());
+        System.out.println(wmap.get(new Object()));
         // 输出结果：0
     }
 }
