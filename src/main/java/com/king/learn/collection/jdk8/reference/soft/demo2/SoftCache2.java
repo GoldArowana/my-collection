@@ -4,6 +4,9 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.util.Vector;
 
+/**
+ * -Xms2m -Xmx2m
+ */
 public class SoftCache2 {
     Vector vector = null;
     Thread remover;
