@@ -16,7 +16,7 @@ public class Main {
             for (List<Object> arrayList = new ArrayList<>(); ; )
                 arrayList.add(new Object());
         } catch (Throwable e) {
-            System.out.println(dog.get()); // null
+            System.out.println("内存溢出时:" + dog.get()); // null
         }
     }
 

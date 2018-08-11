@@ -7,18 +7,13 @@ public class Main {
         Integer a = new Integer(111);
         String b = new String("222");
         Node wrc = new Node(a, b);
+        System.out.println("gc之前: " + wrc.get());
+        System.out.println(wrc.value);
         a = null;
         System.gc();
-        int i = 0;
-        while (true) {
-            if (wrc.get() != null) {
-                i++;
-                System.out.println("WeakReferenceCar's Car is alive for " + i + ", loop - " + wrc);
-            } else {
-                System.out.println("WeakReferenceCar's Car has bean collected");
-                break;
-            }
-        }
+        System.out.println("gc之后: " + wrc.get());
+        System.out.println(wrc.value);
+
     }
 }
 
